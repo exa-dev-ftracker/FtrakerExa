@@ -17,6 +17,21 @@ export default defineNitroPlugin(async (nitroApp) => {
         },
         url: useRuntimeConfig().REDIS_URL as string,
     });
+
+    client.on("error", (err) => {
+        logger.error(`Redis Client Error: ${err}`);
+    });
+    client.on("connect", () => {
+        logger.info("Redis client is connecting...");
+    });
+    client.on("ready", () => {
+        logger.info("Redis client is ready to use");
+    });
+    client.on("end", () => {
+        logger.warn("Redis connection has been closed");
+    })
+
+
     try {
         await client.connect();
         logger.info("Redis connection established successfully");
