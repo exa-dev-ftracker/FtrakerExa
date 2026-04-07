@@ -30,8 +30,11 @@ jobs:
           ssh-keyscan -p 31086 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
           ssh -p 31086 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << EOF
-            docker login ghcr.io -u ${{ github.repository_owner }} -p '${{ secrets.GHCR_TOKEN }}'
-            docker pull ghcr.io/${{ github.repository_owner }}/f-traker:latest
-            docker stop f-traker || true && docker rm f-traker || true
-            docker run -d --name f-traker -p 3001:3000 ghcr.io/${{ github.repository_owner }}/f-traker:latest
+            set -e
+
+            export KUBECONFIG=/home/deploy/.kube/config
+
+            kubectl set image deployment/f-traker -n dev-coffe \
+              f-traker=ghcr.io/${{ github.repository_owner }}/f-traker:latest
+
           EOF
