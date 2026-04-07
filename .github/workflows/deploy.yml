@@ -34,7 +34,7 @@ jobs:
 
             export KUBECONFIG=/home/deploy/.kube/config
 
-            kubectl set image deployment/f-traker -n dev-coffe \
-              f-traker=ghcr.io/${{ github.repository_owner }}/f-traker:latest
+            kubectl set image deployment/f-tracker -n dev-coffe \
+              f-tracker=ghcr.io/${{ github.repository_owner }}/f-traker:latest
 
           EOF
