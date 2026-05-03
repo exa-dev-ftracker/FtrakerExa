@@ -13,6 +13,8 @@ useHead({
 })
 
 const haveError = ref(false)
+const isLoading = ref(false)
+const isLoadingGoogle = ref(false)
 const toast = useToast()
 const router = useRouter()
 const store = useDefaultStore()
@@ -33,43 +35,56 @@ const formData = reactive({
 })
 
 // Handle Google Sign Up
-const handleGoogleSignUp = (response: CredentialResponse) => {
-    const { credential } = response;
-    $fetch('/api/auth/google', {
-        method: 'POST',
-        body: JSON.stringify({ credential })
-    }).then((res: any) => {
+const handleGoogleSignUp = async (response: CredentialResponse) => {
+    isLoadingGoogle.value = true
+    try {
+        const { credential } = response
+        const res: any = await $fetch('/api/auth/google', {
+            method: 'POST',
+            body: JSON.stringify({ credential })
+        })
+        
         if (res.statusCode === 201) {
             // New user from Google - redirect to set password
             store.login(res.body.token)
             toast.add({
                 title: 'Welcome! 🎉',
                 description: "Account created successfully",
+                color: 'green'
             })
-            router.push('/setup-password')
+            return router.push('/setup-password')
         } else if (res.statusCode === 200) {
-            // Existing user
+            // Existing user already registered
             store.login(res.body.token)
-            router.push('/transactions')
+            toast.add({
+                title: 'Welcome Back!',
+                description: "Logged in successfully",
+                color: 'green'
+            })
+            return router.push('/transactions')
         }
-    }).catch((err: any) => {
-        console.error(err)
+    } catch (err: any) {
+        console.error('Google sign up error:', err)
         toast.add({
             title: 'Sign Up Failed',
-            description: "An error occurred while trying to sign up with Google",
+            description: err.data?.body?.message || "An error occurred while trying to sign up with Google",
+            color: 'red'
         })
-    })
+    } finally {
+        isLoadingGoogle.value = false
+    }
 }
 
 const handleGoogleError = () => {
     toast.add({
         title: 'Sign Up Failed',
-        description: "An error occurred while trying to sign up with Google",
+        description: "Google Sign Up was cancelled or failed",
+        color: 'red'
     })
 }
 
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
     haveError.value = false
 
     if (formData.password !== formData.passwordConfirmation) {
@@ -101,46 +116,57 @@ const handleSubmit = () => {
     }
 
     if (!haveError.value) {
-        const { passwordConfirmation, ...formdata } = formData
-        $fetch('/api/users', {
-            method: 'POST',
-            body: JSON.stringify(formdata)
-        }).then((res: any) => {
+        isLoading.value = true
+        try {
+            const { passwordConfirmation, ...formdata } = formData
+            const res: any = await $fetch('/api/users', {
+                method: 'POST',
+                body: JSON.stringify(formdata)
+            })
+            
             if (res.statusCode === 201) {
                 toast.add({
                     title: 'Account Created! 🎉',
-                    description: 'Redirecting to login...'
+                    description: 'Redirecting to login...',
+                    color: 'green'
                 })
-                router.push('/login')
+                return router.push('/login')
             } else if (res.statusCode === 409) {
-              toast.add({
-                    title: 'Email already exists',
-                    description: 'Please use a different email address'
+                toast.add({
+                    title: 'Email Already Exists',
+                    description: 'Please use a different email address',
+                    color: 'red'
                 })
             } else {
                 toast.add({
                     title: 'Error',
-                    description: 'An error occurred while trying to register'
+                    description: res.body?.message || 'An error occurred while trying to register',
+                    color: 'red'
                 })
             }
-        }).catch((err) => {
-          if (err.statusCode === 409) {
+        } catch (err: any) {
+            if (err.statusCode === 409) {
                 toast.add({
-                    title: 'Email already exists',
-                    description: 'Please use a different email address'
+                    title: 'Email Already Exists',
+                    description: 'Please use a different email address',
+                    color: 'red'
                 })
             } else if (err.statusCode === 400) {
                 toast.add({
                     title: 'Bad Request',
-                    description: 'Please fill all the fields correctly'
+                    description: 'Please fill all the fields correctly',
+                    color: 'red'
                 })
-            }else {
-            toast.add({
-                title: 'Error',
-                description: 'An error occurred while trying to register'
-            })
-          }
-        })
+            } else {
+                toast.add({
+                    title: 'Error',
+                    description: err.data?.body?.message || 'An error occurred while trying to register',
+                    color: 'red'
+                })
+            }
+        } finally {
+            isLoading.value = false
+        }
     }
 }
 
@@ -257,9 +283,17 @@ const handleSubmit = () => {
             <!-- Create Account Button -->
             <button
               type="submit"
-              class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 transform transition-all duration-300"
+              :disabled="isLoading"
+              class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 transform transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
             >
-              🎉 Create Account
+              <span v-if="!isLoading">🎉 Create Account</span>
+              <span v-else class="flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating...
+              </span>
             </button>
             </template>
 
@@ -270,7 +304,7 @@ const handleSubmit = () => {
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You can set a password later if you prefer</p>
               </div>
 
-              <div class="flex justify-center mb-6">
+              <div class="flex justify-center mb-6" :class="{'opacity-50 pointer-events-none': isLoadingGoogle}">
                 <GoogleSignInButton @success="handleGoogleSignUp" @error="handleGoogleError"></GoogleSignInButton>
               </div>
 
