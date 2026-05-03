@@ -1,14 +1,9 @@
 <script setup lang="ts">
-interface transaction {
-    type: string
-    amount: number
-    description: string
-    createdAt: string
-    _id: string
-    updatedAt: string
-}
+import type { Transaction } from '~/types'
+import { displayTransactionType } from '~/types'
+
 const toast = useToast()
-const props = defineProps<{ data: transaction, loading: boolean }>()
+const props = defineProps<{ data: Transaction, loading: boolean }>()
 const icon = computed(() => {
     return props.data?.type.toLowerCase() === 'income' ? 'i-heroicons-arrow-trending-up' : 'i-heroicons-arrow-trending-down'
 })
@@ -56,31 +51,41 @@ const color = computed(() => {
 </script>
 
 <template>
-    <div class="grid my-4 grid-cols-2">
+    <div class="group bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-900/20 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-1">
         <div class="flex items-center justify-between">
-            <div class="flex items-center  space-x-1">
-                <UIcon :name="icon" :class="color" />
-                <div>{{ props.data.description }}</div>
-            </div>
-            <div class="w-12">
-                <UBadge color="white" size="lg" :label="props.data.type" />
+            <div class="flex items-center flex-1 gap-3">
+                <div class="p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110" :class="color === 'green' ? 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30' : 'bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30'">
+                    <UIcon :name="icon" :class="[color + ' w-5 h-5 transition-transform group-hover:scale-125',' duration-300']" />
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{{ props.data.description }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ new Date(props.data.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }) }}
+                    </p>
+                </div>
             </div>
 
-        </div>
-        <div class="flex items-center justify-end space-x-2">
-            <div>{{ currency(props.data.amount) }}</div>
-            <div>
-                <UDropdown :items="action" :popper="{ placement: 'bottom-start' }">
-                    <UButton color="white" size="sm" variant="ghost" trailing-icon="i-heroicons-ellipsis-horizontal"
-                        :loading="props.loading" />
-                </UDropdown>
+            <div class="flex items-center gap-3">
+                <UBadge 
+                    :color="color === 'green' ? 'green' : 'red'" 
+                    variant="subtle"
+                    size="lg" 
+                    :label="displayTransactionType(props.data.type)"
+                    class="group-hover:scale-110 transition-transform duration-300"
+                />
+                <p class="font-bold text-gray-900 dark:text-white min-w-[100px] text-right bg-gradient-to-r" :class="color === 'green' ? 'from-green-600 to-emerald-600 bg-clip-text text-transparent' : 'from-red-600 to-rose-600 bg-clip-text text-transparent'">{{ currency(props.data.amount) }}</p>
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <UDropdown :items="action" :popper="{ placement: 'bottom-end' }">
+                        <UButton color="gray" size="sm" variant="ghost" trailing-icon="i-heroicons-ellipsis-horizontal"
+                            :loading="props.loading" class="hover:scale-110 transition-transform" />
+                    </UDropdown>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
-
-<style scope>
+<style scoped>
 .green {
     @apply text-green-600 dark:text-green-400;
 }

@@ -1,241 +1,254 @@
 <script setup lang="ts">
-import { transactionViewOptions } from '~/constants';
-
 useHead({
-  title: 'FTraker - Finance Tracker',
+  title: 'FTracker - Smart Finance Tracker',
   meta: [
-    { name: 'description', content: 'View your financial summary, including income and expenses.' },
+    { name: 'description', content: 'Track your income and expenses with ease. Get insights into your financial health.' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
   ],
 })
 
-interface Transaction {
-  type: string
-  amount: number
-  description: string
-  createdAt: string
-  _id: string
-  updatedAt: string
-}
-
-
-const toast = useToast()
 const router = useRouter()
-const store = useDefaultStore()
-const isModalOpen = ref(false)
-const isLoading = ref(false)
-const isEdit = ref(false)
-const selectedView = ref(transactionViewOptions[2])
-const transactionDetail = reactive({
-  createdAt: `${new Date().toISOString().split('T')[0]}`,
-  description: '',
-  type: '',
-  amount: 0,
-  _id: '',
-})
-const { data, status, error, refresh, clear } = useAsyncData<{ current: Transaction[], last: Transaction[] }>(
-  'transactionsUser',
-  async () => {
-    const jwt =useCookie('jwt')
-    return await $fetch<{ current: Transaction[], last: Transaction[] }>(`/api/transaction?view=${selectedView.value}`, {
-      headers: {
-        Authorization: `Bearer ${jwt.value }`,
-      }
-    })
-  }
-)
+const stats = [
+  { label: 'Active Users', value: '10K+', icon: 'i-heroicons-users-20-solid' },
+  { label: 'Transactions Tracked', value: '500K+', icon: 'i-heroicons-chart-bar-20-solid' },
+  { label: 'Total Managed', value: '$50M+', icon: 'i-heroicons-banknotes-20-solid' },
+]
 
-const isHydrated = ref(false)
-onMounted(() => {
-  isHydrated.value = true
-})
-
-const loading = computed(() => {
-  return status.value !== 'success'
-})
-
-const transactionByDate = computed(() => {
-  let transactionGroup: any = {}
-  for (let transaction of data.value?.current || []) {
-    const date = new Date(transaction.createdAt).toISOString().split('T')[0]
-    if (transactionGroup[date]) {
-      transactionGroup[date].push(transaction)
-    } else {
-      transactionGroup = {
-        ...transactionGroup,
-        [date]: [transaction]
-      }
-    }
-  }
-  return transactionGroup
-})
-
-const income = computed(() => {
-  if (!data.value) return []
-  return data.value!.current.filter((transaction: Transaction) => transaction.type.toLowerCase() === 'income')
-})
-
-if (error.value && isHydrated.value) {
-  toast.add({
-    title: 'Error',
-    description: 'An error occurred while trying to fetch the transactions',
-  })
-}
-
-const lastIncome = computed(() => {
-  if (!data.value) return []
-  return data.value!.last.filter((transaction: Transaction) => transaction.type.toLowerCase() === 'income')
-})
-
-const lastExpanse = computed((): Transaction[] => {
-  if (!data.value) return []
-  return data.value!.last.filter((transaction: Transaction) => transaction.type.toLowerCase() === 'expanse')
-})
-
-const lastIncomeTotal = computed(() => {
-  if (!lastIncome.value) return 0
-  return useTotal(lastIncome.value).total.value
-})
-
-const lastExpanseTotal = computed(() => {
-  if (!lastExpanse.value) return 0
-  return useTotal(lastExpanse.value).total.value
-})
-
-const incomeTotal = computed(() => {
-  if (!income.value) return 0
-  return useTotal(income.value).total.value
-})
-
-const expanse = computed(() => {
-  if (!data.value) return []
-  return data.value!.current.filter((transaction: Transaction) => transaction.type.toLowerCase() === 'expanse')
-})
-
-const expanseTotal = computed(() => {
-  if (!expanse.value) return 0
-  return useTotal(expanse.value).total.value
-})
-
-const handleDeleteTransaction = async (id: string) => {
-  if (isLoading.value) return
-  try {
-  const res = await fetch(`/api/transaction`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${store.jwt}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id }),
-  })
-  if (res.ok) {
-    toast.add({
-      title: 'Success',
-      description: 'Transaction deleted successfully',
-    })
-    refresh()
-  } else {
-    toast.add({
-      title: 'Error',
-      description: 'An error occurred while trying to delete the transaction',
-    })
-  }
-  } catch (error) {
-    console.error(error)
-    toast.add({
-      title: 'Error',
-      description: 'An error occurred while trying to delete the transaction',
-    })
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleEdit = (date: string, _id: string) => {
-  isEdit.value = true
-  const transaction = transactionByDate.value[date].find((transaction: Transaction) => transaction._id === _id)
-  if (!transaction) return
-  transactionDetail.createdAt = transaction.createdAt.split('T')[0]
-  transactionDetail.description = transaction.description
-  transactionDetail.type = transaction.type
-  transactionDetail.amount = transaction.amount
-  transactionDetail._id = transaction._id
-  isModalOpen.value = true
-}
-
-watch(selectedView, async () => {
-  await refresh()
-  if (error.value?.statusCode === 401 && isHydrated.value ) {
-    toast.add({
-      title: 'Unauthorized',
-      description: 'You need to login to view your transactions',
-    })
-    router.push('/login')
-  } else if (error.value && isHydrated.value) {
-    toast.add({
-      title: 'Error',
-      description: 'An error occurred while trying to fetch the transactions',
-    })
-  }
-}
-)
-
-const handleOpenModal = (value: boolean) => {
-  isEdit.value = false
-  isModalOpen.value = value
-}
-
-const handleSubmit = () => {
-  refresh()
-}
-
-
+const features = [
+  {
+    title: 'Easy Tracking',
+    description: 'Record income and expenses in seconds with our intuitive interface',
+    icon: 'i-heroicons-arrow-trending-up-20-solid',
+  },
+  {
+    title: 'Smart Analytics',
+    description: 'Get detailed insights into your spending patterns and financial trends',
+    icon: 'i-heroicons-chart-pie-20-solid',
+  },
+  {
+    title: 'WhatsApp Integration',
+    description: 'Record transactions directly from WhatsApp using natural language',
+    icon: 'i-heroicons-chat-bubble-left-20-solid',
+  },
+  {
+    title: 'Real-time Sync',
+    description: 'Your data syncs instantly across all your devices',
+    icon: 'i-heroicons-cloud-20-solid',
+  },
+  {
+    title: 'Secure & Private',
+    description: 'Bank-level security protects your financial data',
+    icon: 'i-heroicons-lock-closed-20-solid',
+  },
+  {
+    title: 'Multiple Periods',
+    description: 'View your finances by day, week, month, or year',
+    icon: 'i-heroicons-calendar-20-solid',
+  },
+]
 </script>
 
 <template>
-  <NuxtLayout name="default">
-    <section class="flex justify-between ">
-      <UNotifications />
-      <h1 class="text-4xl font-extrabold">Summary</h1>
-      <USelectMenu v-model="selectedView" :options="transactionViewOptions" />
-    </section>
-    <section v-if="isHydrated" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-16 mb-10">
-      <Trend title="Income" type="Income" :selectedView="selectedView" :amount="incomeTotal"
-        :last-amount="lastIncomeTotal" :periode="selectedView" color="green" :loading="loading" />
-      <Trend title="Expanse" type="Expanse" :selectedView="selectedView" :amount="expanseTotal"
-        :last-amount="lastExpanseTotal" :periode="selectedView" color="red" :loading="loading" />
-    </section>
-    <section>
-      <div v-if="isHydrated" class="flex my-8 justify-between">
+  <div class="bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-lg">FT</span>
+          </div>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">FTracker</h1>
+        </div>
+        <div class="flex gap-4">
+          <UButton 
+            to="/login" 
+            color="gray" 
+            variant="ghost" 
+            label="Sign In"
+          />
+          <UButton 
+            to="/register" 
+            color="blue" 
+            variant="solid" 
+            label="Get Started"
+          />
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div>
-          <h2 class="text-3xl mb-4 font-bold">Transactions</h2>
-          <p class="text-gray-500">You have {{ income.length }} incomes and {{ expanse.length }} expanses this {{
-            selectedView }}
+          <div class="inline-block mb-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+            <p class="text-sm font-semibold text-blue-600 dark:text-blue-400">✨ Smart Finance Management</p>
+          </div>
+          
+          <h1 class="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white mb-6 leading-tight">
+            Take Control of Your <span class="text-blue-600 dark:text-blue-400">Finances</span>
+          </h1>
+          
+          <p class="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+            FTracker makes it easy to track your income and expenses. Get actionable insights into your spending patterns and build better financial habits.
           </p>
+
+          <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <UButton 
+              @click="router.push('/register')"
+              color="blue" 
+              variant="solid" 
+              label="Start Free Today"
+              size="xl"
+              trailing-icon="i-heroicons-arrow-right-20-solid"
+            />
+            <UButton 
+              to="#features" 
+              color="gray" 
+              variant="soft" 
+              label="Learn More"
+              size="xl"
+            />
+          </div>
+
+          <p class="text-sm text-gray-500 dark:text-gray-400">No credit card required • 14-day free trial • Cancel anytime</p>
         </div>
-        <div>
-          <UButton @click="handleOpenModal(true)" icon="i-material-symbols-add-circle-outline-rounded" size="sm"
-            color="gray" variant="solid" label="Add" :trailing="false" />
+
+        <!-- Hero Image/Illustration -->
+        <div class="relative">
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-3xl opacity-20"></div>
+          <div class="relative bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 text-white shadow-2xl">
+            <div class="space-y-4">
+              <div class="flex justify-between items-start">
+                <h3 class="text-2xl font-bold">Your Finances</h3>
+                <div class="text-green-300">↗ +12%</div>
+              </div>
+              <div class="space-y-3">
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div class="text-sm text-blue-100">Income This Month</div>
+                  <div class="text-2xl font-bold">Rp 5,000,000</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div class="text-sm text-blue-100">Expenses This Month</div>
+                  <div class="text-2xl font-bold">Rp 2,500,000</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div class="text-sm text-blue-100">Remaining Budget</div>
+                  <div class="text-2xl font-bold">Rp 2,500,000</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
-    <section>
-      <Modal
-          :isEdit="isEdit"
-          v-model:isModalOpen="isModalOpen"
-          :data="isEdit ? transactionDetail : undefined"
-          @submit="handleSubmit"
-      />
-    </section>
-    <section v-if="!loading">
-      <div class="mb-8" v-for="(transactionOnDay, date) in transactionByDate" :key="date">
-        <TransactionSummaryDaily :transaction="transactionOnDay" :date="date.toString()" />
-        <Transaction v-for="(transactionUser, index) in transactionOnDay" :key="index" :data="transactionUser"
-          :Day="transactionByDate" :loading="loading" @delete="handleDeleteTransaction" @edit="handleEdit" />
+
+    <!-- Stats Section -->
+    <section class="bg-gray-50 dark:bg-gray-800/50 py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div v-for="stat in stats" :key="stat.label" class="text-center">
+            <div class="flex justify-center mb-4">
+              <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <UIcon :name="stat.icon" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div class="text-4xl font-bold text-gray-900 dark:text-white mb-2">{{ stat.value }}</div>
+            <div class="text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
+          </div>
+        </div>
       </div>
     </section>
-    <div v-else>
-      <USkeleton v-for="i in 3" :key="i" class="h-8 w-full mb-2" />
-    </div>
-  </NuxtLayout>
+
+    <!-- Features Section -->
+    <section id="features" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">Powerful Features</h2>
+        <p class="text-xl text-gray-600 dark:text-gray-300">Everything you need to master your finances</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div v-for="feature in features" :key="feature.title" class="bg-white dark:bg-gray-800 rounded-xl p-8 hover:shadow-lg dark:hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
+          <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
+            <UIcon :name="feature.icon" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ feature.title }}</h3>
+          <p class="text-gray-600 dark:text-gray-400">{{ feature.description }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-4xl font-extrabold text-white mb-4">Ready to take control?</h2>
+        <p class="text-xl text-blue-100 mb-8">Join thousands of users already managing their finances smarter</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <UButton 
+            @click="router.push('/register')"
+            color="white" 
+            variant="solid" 
+            label="Create Free Account"
+            size="xl"
+          />
+          <UButton 
+            @click="router.push('/login')"
+            color="white" 
+            variant="outline" 
+            label="Already have an account?"
+            size="xl"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold">FT</span>
+              </div>
+              <h3 class="font-bold text-lg">FTracker</h3>
+            </div>
+            <p class="text-gray-400">Smart finance management for everyone</p>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Product</h4>
+            <ul class="space-y-2 text-gray-400">
+              <li><a href="#" class="hover:text-white transition">Features</a></li>
+              <li><a href="#" class="hover:text-white transition">Pricing</a></li>
+              <li><a href="#" class="hover:text-white transition">Security</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Company</h4>
+            <ul class="space-y-2 text-gray-400">
+              <li><a href="#" class="hover:text-white transition">About</a></li>
+              <li><a href="#" class="hover:text-white transition">Blog</a></li>
+              <li><a href="#" class="hover:text-white transition">Contact</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Legal</h4>
+            <ul class="space-y-2 text-gray-400">
+              <li><a href="#" class="hover:text-white transition">Privacy</a></li>
+              <li><a href="#" class="hover:text-white transition">Terms</a></li>
+              <li><a href="#" class="hover:text-white transition">Cookies</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
+          <p>&copy; 2024 FTracker. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
 </template>
+
+<style scoped>
+html {
+  scroll-behavior: smooth;
+}
+</style>

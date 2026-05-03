@@ -42,10 +42,13 @@ export default defineEventHandler(async (events) => {
             const all = await transactions
                 .find({user: dataUser.id})
                 .sort({createdAt: -1});
+            setResponseStatus(events, 200);
             return {
                 statusCode: 200,
-                current: all,
-                last: [],
+                body: {
+                    current: all,
+                    last: [],
+                },
             };
         }
         const current = await transactions
@@ -59,10 +62,13 @@ export default defineEventHandler(async (events) => {
             .sort({createdAt: -1})
             .gte("createdAt", lastPeriode().start)
             .lte("createdAt", lastPeriode().end);
+        setResponseStatus(events, 200);
         return {
             statusCode: 200,
-            current,
-            last,
+            body: {
+                current,
+                last,
+            },
         };
     } catch (error) {
         logger.error(`Error in get transaction: ${error}`);

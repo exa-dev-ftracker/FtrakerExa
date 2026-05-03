@@ -1,22 +1,17 @@
     <script lang="ts" setup>
+    import { z } from "zod";
+    import type { Transaction } from "~/types";
+    
     interface InputEvent extends Event {
         target: HTMLInputElement & {
             value: string;
         };
     }
 
-    import { z } from "zod";
-
     const props = defineProps<{
         isModalOpen: boolean;
         isEdit: boolean;
-        data?: {
-            createdAt: string;
-            description: string;
-            type: string;
-            amount: number;
-            _id: string;
-        };
+        data?: Transaction;
     }>();
 
     const toast = useToast();
@@ -26,9 +21,10 @@
     const schema = z.object({
         createdAt: z.string().min(8, "Date must be a valid date"),
         description: z.string().min(3, "Description must be at least 3 characters"),
-        type: z.enum(["Income", "Expanse"], {
-            message: "Type must be Income or Expanse",
-        }),
+        type: z.string().refine(
+            (val) => ['Income', 'Expense', 'Expanse'].includes(val),
+            { message: "Type must be Income or Expense" }
+        ),
         amount: z.number().min(1000, "Amount must be at least Rp 1000"),
     });
 
@@ -159,44 +155,111 @@
 
 <template>
     <div>
-        <UModal v-model="isOpen" prevent-close>
+        <UModal v-model="isOpen" prevent-close class="animate-fade-in">
             <UCard :ui="{
-                ring: '',
-                divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+                ring: 'ring-2 ring-blue-200 dark:ring-blue-800',
+                divide: 'divide-y divide-gray-200 dark:divide-gray-800',
+                body: { padding: 'px-6 py-6' },
+                header: { padding: 'px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20' },
             }">
                 <template #header>
                     <div class="flex items-center justify-between">
-                        <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-                            Form Transaction
-                        </h3>
-                        <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1"
+                        <div>
+                            <h3 class="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                {{ isEdit ? '✏️ Edit Transaction' : '➕ New Transaction' }}
+                            </h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {{ isEdit ? 'Update your transaction details' : 'Record a new transaction' }}
+                            </p>
+                        </div>
+                        <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1 hover:scale-110 transition-transform"
                             @click="isOpen = false" />
                     </div>
                 </template>
-                <div class="grid grid-cols-1 gap-4">
-                    <UForm class="flex flex-col gap-4" :schema="schema" :state="formData" @submit="onSubmit">
-                        <UFormGroup eager-validation label="Date" name="createdAt" required>
-                            <UInput label="Date" type="date" placeholder="Date" v-model="formData.createdAt"
-                                name="createdAt" />
+                <UForm class="flex flex-col gap-6" :schema="schema" :state="formData" @submit="onSubmit">
+                    <div class="grid grid-cols-2 gap-4">
+                        <UFormGroup eager-validation label="📅 Date" name="createdAt" required>
+                            <UInput 
+                                type="date" 
+                                placeholder="Select date" 
+                                v-model="formData.createdAt"
+                                name="createdAt"
+                                class="hover:ring-2 hover:ring-blue-300 transition-all"
+                            />
                         </UFormGroup>
-                        <UFormGroup eager-validation name="description" label="Description" required>
-                            <UInput label="Description" name="description" v-model="formData.description"
-                                placeholder="Description" />
+                        <UFormGroup eager-validation name="type" label="💳 Type" required>
+                            <USelect 
+                                name="type" 
+                                v-model="formData.type" 
+                                placeholder="Select type"
+                                :options="['Income', 'Expense']"
+                                class="hover:ring-2 hover:ring-blue-300 transition-all"
+                            />
                         </UFormGroup>
-                        <UFormGroup eager-validation name="type" label="Type" required>
-                            <USelect name="type" v-model="formData.type" label="Type" placeholder="Type of transaction"
-                                :options="['Income', 'Expanse']" />
-                        </UFormGroup>
-                        <UFormGroup label="Amount" eager-validation name="amount" required>
-                            <UInput label="Amount" v-model="formattedAmount" @keyup="onInput" type="text"
-                                placeholder="Amount" name="amount" />
-                        </UFormGroup>
-                        <UFormGroup>
-                            <UButton type="submit" color="gray" variant="solid" label="Save" />
-                        </UFormGroup>
-                    </UForm>
-                </div>
+                    </div>
+
+                    <UFormGroup eager-validation name="description" label="📝 Description" required>
+                        <UInput 
+                            name="description" 
+                            v-model="formData.description"
+                            placeholder="e.g., Coffee, Salary, etc."
+                            class="hover:ring-2 hover:ring-blue-300 transition-all"
+                        />
+                    </UFormGroup>
+
+                    <UFormGroup label="💰 Amount" eager-validation name="amount" required>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500 dark:text-gray-400 font-semibold">Rp</span>
+                            <UInput 
+                                v-model="formattedAmount" 
+                                @keyup="onInput" 
+                                type="text"
+                                placeholder="0"
+                                name="amount"
+                                class="pl-10 hover:ring-2 hover:ring-blue-300 transition-all"
+                            />
+                        </div>
+                    </UFormGroup>
+
+                    <div class="flex gap-3 pt-4">
+                        <UButton 
+                            type="submit" 
+                            color="blue" 
+                            variant="solid" 
+                            label="Save Transaction"
+                            size="lg"
+                            class="flex-1 hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105"
+                            :loading="isLoading"
+                        />
+                        <UButton 
+                            type="button"
+                            color="gray" 
+                            variant="soft" 
+                            label="Cancel"
+                            size="lg"
+                            class="flex-1 hover:scale-105 transition-transform"
+                            @click="isOpen = false"
+                        />
+                    </div>
+                </UForm>
             </UCard>
         </UModal>
     </div>
 </template>
+
+<style scoped>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in :deep(.fixed) {
+  animation: fadeIn 0.3s ease-out;
+}
+</style>

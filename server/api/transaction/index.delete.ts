@@ -46,8 +46,8 @@ export default defineEventHandler(async (events) => {
         }
         setResponseStatus(events, 200);
         return {
-            status: 200,
-            body: {message: "Succes"},
+            statusCode: 200,
+            body: {message: "Success"},
         };
     } catch (error) {
         logger.error("Error deleting transaction:", error);
@@ -56,26 +56,26 @@ export default defineEventHandler(async (events) => {
                 setResponseStatus(events, 401);
                 return {
                     statusCode: 401,
-                    message: "Unauthorized: Invalid token",
+                    body: {message: "Unauthorized: Invalid token"},
                 }
             } else if (error.name === "TokenExpiredError") {
                 setResponseStatus(events, 401);
                 return {
                     statusCode: 401,
-                    message: "Unauthorized: Token expired",
+                    body: {message: "Unauthorized: Token expired"},
                 }
             } else {
                 setResponseStatus(events, 500);
                 return {
                     statusCode: 500,
-                    message: `Internal Server Error: ${error.message}`,
+                    body: {message: `Internal Server Error: ${error.message}`},
                 }
             }
         } else {
             setResponseStatus(events, 500);
             return {
                 statusCode: 500,
-                message: "Internal Server Error",
+                body: {message: "Internal Server Error"},
             }
         }
     }

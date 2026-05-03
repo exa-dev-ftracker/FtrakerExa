@@ -3,3 +3,36 @@ export type dataUserRedis = {
     name: string;
     email: string;
 }
+
+export interface Transaction {
+    type: string
+    amount: number
+    description: string
+    createdAt: string
+    _id: string
+    updatedAt: string
+}
+
+export interface TransactionResponse {
+    statusCode: number
+    body: {
+        current: Transaction[]
+        last: Transaction[]
+    }
+}
+
+export type TransactionType = 'income' | 'expense' | 'expanse'
+
+export const normalizeTransactionType = (type: string): TransactionType => {
+    const normalized = type.toLowerCase()
+    if (normalized === 'income' || normalized === 'expense' || normalized === 'expanse') {
+        return normalized as TransactionType
+    }
+    return 'expense'
+}
+
+export const displayTransactionType = (type: string): string => {
+    const normalized = normalizeTransactionType(type)
+    if (normalized === 'income') return 'Income'
+    return 'Expense' // Both 'expense' and 'expanse' display as 'Expense'
+}

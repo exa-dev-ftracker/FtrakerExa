@@ -10,10 +10,19 @@ export default defineEventHandler(async (event) => {
         const body = await readBody<{ email: string; password: string }>(event);
         const user: User | null = await users.findOne({email: body.email});
         if (user) {
+            // Check if user has a password (Google sign-up users might not)
+            if (!user.password) {
+                setResponseStatus(event, 401);
+                return {
+                    statusCode: 401,
+                    body: {message: "Please use Google Sign In or set a password first"},
+                };
+            }
+
             const isUserPassword = bcrypt.compareSync(body.password, user.password);
             if (isUserPassword) {
                 const token = jwt.sign(
-                    {email: user.email, name: user.name},
+                    {email: user.email, name: user.name, id: user._id},
                     runtimeConfig.secretJwtKey,
                     {algorithm: "HS384"}
                 );

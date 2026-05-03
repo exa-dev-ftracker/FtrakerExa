@@ -29,8 +29,9 @@ export default defineEventHandler(async (event) => {
         }
         const emailIsUser: User | null = await users.findOne({email: email});
         if (emailIsUser) {
+            // Existing user - login
             const token = jwt.sign(
-                {email, name: emailIsUser.name},
+                {email, name: emailIsUser.name, id: emailIsUser._id},
                 runTimeConfig.secretJwtKey,
                 {algorithm: "HS384"}
             );
@@ -48,22 +49,44 @@ export default defineEventHandler(async (event) => {
                 sameSite: "strict",
                 maxAge: 60 * 60 * 24,
             });
+            setResponseStatus(event, 200);
+            return {
+                statusCode: 200,
+                body: {message: "Login successful", token},
+            };
+        } else {
+            // New user - create account without password
+            const newUser = new users({
+                name: name,
+                email: email,
+                password: null, // No password for Google sign-up initially
+            });
+            
+            const savedUser = await newUser.save();
+            
+            const token = jwt.sign(
+                {email, name: savedUser.name, id: savedUser._id},
+                runTimeConfig.secretJwtKey,
+                {algorithm: "HS384"}
+            );
+            const dataUser = {
+                email: savedUser.email,
+                name: savedUser.name,
+                id: savedUser._id,
+            };
+            const dataUserString = JSON.stringify(dataUser);
+            await useNitroApp().redis.set(token, dataUserString, {
+                EX: 60 * 60 * 24 // expired 1 hari
+            });
+            setCookie(event, "jwt", token, {
+                secure: true,
+                sameSite: "strict",
+                maxAge: 60 * 60 * 24,
+            });
             setResponseStatus(event, 201);
             return {
                 statusCode: 201,
-                body: {message: "User already exists", token},
-            };
-        } else if (!emailIsUser) {
-            setResponseStatus(event, 404);
-            return {
-                statusCode: 404,
-                body: {message: "User does not exist"},
-            };
-        } else {
-            setResponseStatus(event, 500);
-            return {
-                statusCode: 500,
-                body: {message: "Server error"},
+                body: {message: "User created successfully", token},
             };
         }
     } catch (error) {
