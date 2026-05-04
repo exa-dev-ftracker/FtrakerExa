@@ -71,6 +71,8 @@ const handleLogout = () => {
         <main class="grow">
             <slot />
         </main>
+        <PWAInstallPrompt />
+        <OfflineBanner />
     </section>
 </template>
 

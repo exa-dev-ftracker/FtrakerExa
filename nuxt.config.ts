@@ -7,6 +7,19 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "FTraker - Finance Tracker",
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'Finance Tracker - Track your expenses and income' },
+        { name: 'theme-color', content: '#ffffff' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-title', content: 'FTraker' },
+      ],
+      link: [
+        { rel: 'manifest', href: '/manifest.json' },
+        { rel: 'apple-touch-icon', href: '/ios/180.png' },
+        { rel: 'icon', href: '/favicon.ico' },
+      ],
       script: [
         { src: 'https://accounts.google.com/gsi/client', async: true, defer: true }
       ],

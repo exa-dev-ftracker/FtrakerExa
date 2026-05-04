@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "^2.18.4",
+    "@nuxtjs/pwa": "^3.3.5",
     "@nuxtjs/tailwindcss": "^6.12.1",
     "@pinia/nuxt": "^0.5.4",
     "bcrypt": "^5.1.1",

@@ -142,7 +142,14 @@
             if (newValue) {
                 formData.createdAt = newValue.createdAt.split("T")[0];
                 formData.description = newValue.description;
-                formData.type = newValue.type;
+                
+                // Normalisasi tipe ke format Capitalize yang tepat
+                let parsedType = newValue.type.charAt(0).toUpperCase() + newValue.type.slice(1).toLowerCase();
+                if (parsedType === "Expanse") {
+                    parsedType = "Expense";
+                }
+                formData.type = parsedType;
+                
                 formData.amount = newValue.amount;
                 formData._id = newValue._id;
                 formattedAmount.value = currency(newValue.amount);
@@ -184,7 +191,6 @@
                                 placeholder="Select date" 
                                 v-model="formData.createdAt"
                                 name="createdAt"
-                                class="hover:ring-2 hover:ring-blue-300 transition-all"
                             />
                         </UFormGroup>
                         <UFormGroup eager-validation name="type" label="💳 Type" required>
@@ -193,7 +199,6 @@
                                 v-model="formData.type" 
                                 placeholder="Select type"
                                 :options="['Income', 'Expense']"
-                                class="hover:ring-2 hover:ring-blue-300 transition-all"
                             />
                         </UFormGroup>
                     </div>
@@ -203,22 +208,18 @@
                             name="description" 
                             v-model="formData.description"
                             placeholder="e.g., Coffee, Salary, etc."
-                            class="hover:ring-2 hover:ring-blue-300 transition-all"
                         />
                     </UFormGroup>
 
                     <UFormGroup label="💰 Amount" eager-validation name="amount" required>
-                        <div class="relative">
-                            <span class="absolute left-3 top-3 text-gray-500 dark:text-gray-400 font-semibold">Rp</span>
-                            <UInput 
-                                v-model="formattedAmount" 
-                                @keyup="onInput" 
-                                type="text"
-                                placeholder="0"
-                                name="amount"
-                                class="pl-10 hover:ring-2 hover:ring-blue-300 transition-all"
-                            />
-                        </div>
+                        <UInput 
+                            v-model="formattedAmount" 
+                            @keyup="onInput" 
+                            type="text"
+                            placeholder="0"
+                            name="amount"
+                        >
+                        </UInput>
                     </UFormGroup>
 
                     <div class="flex gap-3 pt-4">
@@ -228,7 +229,7 @@
                             variant="solid" 
                             label="Save Transaction"
                             size="lg"
-                            class="flex-1 hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105"
+                            class="flex-1 justify-center transition-all duration-200"
                             :loading="isLoading"
                         />
                         <UButton 
@@ -237,7 +238,7 @@
                             variant="soft" 
                             label="Cancel"
                             size="lg"
-                            class="flex-1 hover:scale-105 transition-transform"
+                            class="flex-1 justify-center transition-all duration-200"
                             @click="isOpen = false"
                         />
                     </div>

@@ -52,7 +52,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <NuxtLayout name="default">
     <section class="flex justify-between items-center mb-8">
       <div>
         <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white">Settings</h1>
@@ -145,7 +144,6 @@ onMounted(async () => {
         </section>
       </main>
     </section>
-  </NuxtLayout>
 </template>
 
 <style scoped>
