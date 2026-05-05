@@ -12,29 +12,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Get Commit SHA (short)
+        id: vars
+        run: echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/f-traker:latest .
+          docker build -t ghcr.io/${{ github.repository_owner }}/f-traker:${{ steps.vars.outputs.sha }} .
 
       - name: Push Docker image to GHCR
-        run: docker push ghcr.io/${{ github.repository_owner }}/f-traker:latest
+        run: docker push ghcr.io/${{ github.repository_owner }}/f-traker:${{ steps.vars.outputs.sha }}
 
       - name: Deploy to VPS
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p 31086 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p 31080 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+          ssh -p 31080 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << EOF
+          export KUBECONFIG=/home/deploy/.kube/config
 
-          ssh -p 31086 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << EOF
-            set -e
-
-            export KUBECONFIG=/home/deploy/.kube/config
-
-            kubectl set image deployment/f-tracker -n dev-coffe \
-              f-tracker=ghcr.io/${{ github.repository_owner }}/f-traker:latest
+          # Patch the deployment to use the new SHA tag
+          kubectl set image deployment/f-traker -n dev-coffe \
+            f-traker=ghcr.io/${{ github.repository_owner }}/f-traker:${{ steps.vars.outputs.sha }}
 
           EOF
