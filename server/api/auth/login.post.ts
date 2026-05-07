@@ -1,4 +1,5 @@
 import users, {type User} from "~/server/model/users";
+import Token from "~/server/model/token";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import logger from "~/server/utils/logger";
@@ -22,7 +23,13 @@ export default defineEventHandler(async (event) => {
             const isUserPassword = bcrypt.compareSync(body.password, user.password);
             if (isUserPassword) {
                 const token = jwt.sign(
-                    {email: user.email, name: user.name, id: user._id},
+                    {email: user.email, name: user.name, id: user._id, type: 'access'},
+                    runtimeConfig.secretJwtKey,
+                    {algorithm: "HS384"}
+                );
+                // create refresh token (longer lived) and store it server-side
+                const refreshToken = jwt.sign(
+                    {id: user._id, type: 'refresh'},
                     runtimeConfig.secretJwtKey,
                     {algorithm: "HS384"}
                 );
@@ -35,10 +42,26 @@ export default defineEventHandler(async (event) => {
                 await useNitroApp().redis.set(token, dataUserString, {
                     EX: 60 * 60 * 24 // expired 1 hari
                 });
+                // Persist refresh token in DB with expireAt
+                try {
+                    const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+                    const refreshDoc = new Token({ id_user: user._id, token: refreshToken, expireAt });
+                    await refreshDoc.save();
+                } catch (err) {
+                    // ignore DB errors for refresh token but log
+                    console.error('Failed to save refresh token', err);
+                }
                 setCookie(event, "jwt", token, {
-                    secure: true,
+                    secure: process.env.NODE_ENV === 'production',
                     sameSite: "strict",
                     maxAge: 60 * 60 * 24,
+                });
+                // set httpOnly refresh token cookie
+                setCookie(event, "refresh_token", refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    maxAge: 7 * 24 * 60 * 60,
                 });
                 setResponseStatus(event, 200);
                 return {

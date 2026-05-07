@@ -1,5 +1,6 @@
 import {OAuth2Client} from "google-auth-library";
 import users, {type User} from "~/server/model/users";
+import Token from "~/server/model/token";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 
@@ -31,10 +32,11 @@ export default defineEventHandler(async (event) => {
         if (emailIsUser) {
             // Existing user - login
             const token = jwt.sign(
-                {email, name: emailIsUser.name, id: emailIsUser._id},
+                {email, name: emailIsUser.name, id: emailIsUser._id, type: 'access'},
                 runTimeConfig.secretJwtKey,
                 {algorithm: "HS384"}
             );
+            const refreshToken = jwt.sign({ id: emailIsUser._id, type: 'refresh' }, runTimeConfig.secretJwtKey, { algorithm: 'HS384' });
             const dataUser = {
                 email: emailIsUser.email,
                 name: emailIsUser.name,
@@ -44,10 +46,23 @@ export default defineEventHandler(async (event) => {
             await useNitroApp().redis.set(token, dataUserString, {
                 EX: 60 * 60 * 24 // expired 1 hari
             });
+            try {
+                const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                const refreshDoc = new Token({ id_user: emailIsUser._id, token: refreshToken, expireAt });
+                await refreshDoc.save();
+            } catch (err) {
+                console.error('Failed to save refresh token', err);
+            }
             setCookie(event, "jwt", token, {
-                secure: true,
+                secure: process.env.NODE_ENV === 'production',
                 sameSite: "strict",
                 maxAge: 60 * 60 * 24,
+            });
+            setCookie(event, "refresh_token", refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60,
             });
             setResponseStatus(event, 200);
             return {
