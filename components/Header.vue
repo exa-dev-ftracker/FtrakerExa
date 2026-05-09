@@ -1,43 +1,42 @@
-<script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRoute } from '#imports'
-
+<script setup lang="ts">
 const store = useDefaultStore()
 const route = useRoute()
+const colorMode = useColorMode()
 
 const links = [
-    { name: 'Dashboard', path: '/dashboard', hideOnDesktop: false },
-    { name: 'Transactions', path: '/transactions', hideOnDesktop: false },
-    { name: 'Analytics', path: '/analytics', hideOnDesktop: false },
-    { name: 'Settings', path: '/settings', hideOnDesktop: true } // Mobile only
+    { name: 'Home', path: '/dashboard', icon: 'i-heroicons-home' },
+    { name: 'History', path: '/transactions', icon: 'i-heroicons-banknotes' },
+    { name: 'Analytics', path: '/analytics', icon: 'i-heroicons-chart-pie' },
+    { name: 'Settings', path: '/settings', icon: 'i-heroicons-cog-8-tooth' }
 ]
 
-const navItems = ref([])
+const navItems = ref<HTMLElement[]>([])
 const indicatorStyle = ref({ width: '0px', transform: 'translateX(0px)', opacity: 0 })
+
+const isDark = computed({
+  get: () => colorMode.value === 'dark',
+  set: () => {
+    colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+  }
+})
 
 const updateIndicator = async () => {
     await nextTick()
-    // Small delay to ensure DOM is fully painted, especially with Nuxt client hydration
     setTimeout(() => {
         const activeIndex = links.findIndex(link => route.path.startsWith(link.path))
-        
         if (activeIndex !== -1 && navItems.value[activeIndex]) {
-            // NuxtLink ref usually gives the component instance and $el gives the DOM node
-            const el = navItems.value[activeIndex]?.$el || navItems.value[activeIndex]
+            const el = (navItems.value[activeIndex] as any).$el || navItems.value[activeIndex]
             if (el && el.offsetWidth) {
-                // Compensate for the container's padding (p-1 which is 4px)
-                // Left offset is relative to the container
                 indicatorStyle.value = {
-                    width: `${el.offsetWidth}px`,
-                    transform: `translateX(${el.offsetLeft}px)`,
+                    width: `${el.offsetWidth - 12}px`,
+                    transform: `translateX(${el.offsetLeft }px)`,
                     opacity: 1
                 }
             }
         } else {
-            // Hide if not matched
-            indicatorStyle.value = { ...indicatorStyle.value, opacity: 0 }
+            indicatorStyle.value.opacity = 0
         }
-    }, 50)
+    }, 100)
 }
 
 onMounted(() => {
@@ -45,59 +44,99 @@ onMounted(() => {
     window.addEventListener('resize', updateIndicator)
 })
 
-onUnmounted(() => {
-    window.removeEventListener('resize', updateIndicator)
-})
-
-watch(() => route.path, () => {
-    updateIndicator()
-})
+onUnmounted(() => window.removeEventListener('resize', updateIndicator))
+watch(() => route.path, () => updateIndicator())
 </script>
 
 <template>
-    <header class="flex flex-col sm:flex-row items-center w-full container mx-auto justify-between my-8 px-4 sm:px-0 gap-4 sm:gap-0">
-        <NuxtLink to="/">
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FTracker</h1>
-        </NuxtLink>
-
-        <!-- Navigation Links with Sliding Indicator -->
-        <nav v-if="store.isAuth" class="relative flex items-center bg-gray-100 dark:bg-gray-800/50 rounded-full p-1" style="isolation: isolate;">
-            <!-- Floating Pill Background -->
-            <div 
-                class="absolute top-1 bottom-1 bg-white dark:bg-gray-700 shadow rounded-full transition-all duration-300 ease-out"
-                :style="indicatorStyle"
-            ></div>
-
-            <NuxtLink 
-                v-for="(item, index) in links" 
-                :key="item.path" 
-                :to="item.path" 
-                ref="navItems"
-                class="relative z-10 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300"
-                :class="[
-                    item.hideOnDesktop ? 'sm:hidden block' : '',
-                    route.path.startsWith(item.path) ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                ]"
+    <div class="relative z-50">
+        <header class="w-full py-6 sm:py-8 px-6 sm:px-10 flex items-center justify-between gap-8">
+            <!-- Logo -->
+            <Motion 
+                :initial="{ opacity: 0, x: -20 }"
+                :animate="{ opacity: 1, x: 0 }"
+                :transition="{ duration: 0.8 }"
+                class="logo-container"
             >
-                {{ item.name }}
-            </NuxtLink>
-        </nav>
+                <NuxtLink 
+                    to="/" 
+                    class="group flex items-center gap-3 shrink-0"
+                >
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:rotate-12 transition-transform duration-500">
+                        <UIcon name="i-heroicons-bolt" class="w-7 h-7 text-white" />
+                    </div>
+                    <div class="flex flex-col -space-y-1">
+                        <span class="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">FTraker<span class="text-blue-600">.</span></span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600/60 dark:text-blue-400/40">Finances</span>
+                    </div>
+                </NuxtLink>
+            </Motion>
 
-        <div class="flex space-x-3 items-center hidden sm:flex">
-            <template v-if="store.isAuth">
-                <NuxtLink to="/settings">
+            <!-- Desktop Navigation -->
+            <nav v-if="store.isAuth" class="hidden lg:flex relative items-center bg-gray-100 dark:bg-gray-800/50 backdrop-blur-xl p-1.5 rounded-[2rem] border border-gray-200 dark:border-white/5 shadow-inner">
+                <div 
+                    class="absolute h-[calc(100%-12px)] bg-white dark:bg-gray-700 shadow-xl shadow-gray-200/50 dark:shadow-none rounded-[1.5rem] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    :style="indicatorStyle"
+                ></div>
+
+                <NuxtLink 
+                    v-for="item in links" 
+                    :key="item.path" 
+                    :to="item.path" 
+                    ref="navItems"
+                    class="relative z-10 px-6 py-2.5 rounded-full text-sm font-black transition-colors duration-300"
+                    :class="route.path.startsWith(item.path) ? 'text-blue-600 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'"
+                >
+                    {{ item.name }}
+                </NuxtLink>
+            </nav>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle -->
+                <ClientOnly>
                     <UButton
-                        icon="i-heroicons-cog-8-tooth"
+                        :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
                         color="gray"
                         variant="ghost"
-                        size="md"
-                        square
-                        title="Settings"
+                        aria-label="Theme"
+                        class="rounded-xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5"
+                        @click="isDark = !isDark"
                     />
-                </NuxtLink>
-                <UAvatar src="https://avatars.githubusercontent.com/u/739984?v=4" alt="Avatar" />
-            </template>
-            <slot />
-        </div>
-    </header>
+                </ClientOnly>
+
+                <template v-if="store.isAuth">
+                    <div class="flex items-center gap-3">
+                        <NuxtLink to="/settings" class="hidden sm:block">
+                            <UButton icon="i-heroicons-cog-8-tooth" color="gray" variant="ghost" class="rounded-xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5" />
+                        </NuxtLink>
+                        <div class="h-11 w-11 rounded-2xl overflow-hidden ring-2 ring-gray-100 dark:ring-white/5 p-0.5 group cursor-pointer hover:ring-blue-500/30 transition-all">
+                            <UAvatar 
+                                :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${store.user?.name || 'Felix'}`" 
+                                :alt="store.user?.name || 'User'" 
+                                class="w-full h-full transform group-hover:scale-110 transition-transform" 
+                            />
+                        </div>
+                    </div>
+                </template>
+                
+                
+                <slot />
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav v-if="store.isAuth" class="lg:hidden fixed bottom-6 left-6 right-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-[100] flex items-center justify-around px-4">
+            <NuxtLink 
+                v-for="item in links" 
+                :key="item.path" 
+                :to="item.path" 
+                class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
+                :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
+            >
+                <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
+                <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
+            </NuxtLink>
+        </nav>
+    </div> 
 </template>

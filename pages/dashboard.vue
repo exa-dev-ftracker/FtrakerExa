@@ -57,14 +57,11 @@ const incomeTotal = computed(() => {
     0,
   );
 });
-console.log("Income Total:", data.value);
+
 const expenseTotal = computed(() => {
   return (data.value?.body?.current || []).reduce(
     (sum: number, t: Transaction) => {
       const type = t.type.toLowerCase();
-      console.log(
-        `Transaction: ${t.description}, Type: ${type}, Amount: ${t.amount}`,
-      );
       return type === "expense" || type === "expanse" ? sum + t.amount : sum;
     },
     0,
@@ -82,7 +79,7 @@ const recentTransactions = computed(() => {
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    .slice(0, 5);
+    .slice(0, 8); // Show more on refactored dashboard
 });
 
 const topExpenses = computed(() => {
@@ -118,313 +115,228 @@ watch(error, (newError) => {
     });
   }
 });
+
+const currency = (val: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+}
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
-  >
+  <div class="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] p-4 md:p-8">
     <UNotifications />
 
-    <!-- Welcome Hero -->
-    <section
-      class="mb-12 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-2xl shadow-xl p-8 md:p-12"
-    >
-      <div
-        class="flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+    <div class="max-w-7xl mx-auto space-y-8">
+      <!-- Header / Welcome Section -->
+      <Motion 
+        :initial="{ opacity: 0, y: -30 }"
+        :animate="{ opacity: 1, y: 0 }"
+        :transition="{ duration: 0.8 }"
+        class="dash-header flex flex-col md:flex-row md:items-center justify-between gap-6"
       >
-        <div class="flex-1">
-          <h1 class="text-4xl md:text-5xl font-black mb-2">Welcome back! 👋</h1>
-          <p class="text-blue-100 text-lg">Here's your financial overview</p>
+        <div>
+          <h1 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            Hello, <span class="text-blue-600">{{ store.user?.name || 'User' }}</span> 👋
+          </h1>
+          <p class="text-slate-500 dark:text-slate-400 font-medium">Here's what's happening with your money today.</p>
         </div>
+        
         <div class="flex items-center gap-3">
-          <NuxtLink to="/analytics">
-            <UButton
-              color="white"
-              variant="ghost"
-              size="lg"
-              class="bg-white/10 hover:bg-white/20"
-            >
-              📊 Analytics
-            </UButton>
-          </NuxtLink>
-          <USelect
-            v-model="selectedView"
-            :options="[
-              { label: 'Weekly', value: 'Week' },
-              { label: 'Monthly', value: 'Month' },
-              { label: 'Yearly', value: 'Year' },
-            ]"
-          />
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 flex shadow-sm">
+             <button 
+                v-for="v in ['Week', 'Month', 'Year']" 
+                :key="v"
+                @click="selectedView = v as any"
+                :class="[
+                  'px-4 py-1.5 rounded-lg text-sm font-bold transition-all',
+                  selectedView === v 
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ]"
+             >
+                {{ v }}
+             </button>
+          </div>
+          <UButton icon="i-heroicons-plus" color="primary" class="rounded-xl px-4 py-2.5 font-bold shadow-lg shadow-blue-500/25">
+             Add New
+          </UButton>
         </div>
-      </div>
-    </section>
+      </Motion>
 
-    <!-- Key Metrics -->
-    <section v-if="isHydrated && !loading" class="mb-12">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Stats Grid -->
+      <section v-if="!loading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Balance Card -->
-        <div
-          class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-white p-8"
+        <Motion 
+           :initial="{ opacity: 0, y: 40 }"
+           :animate="{ opacity: 1, y: 0 }"
+           :transition="{ duration: 0.8, delay: 0.2 }"
+           class="stat-card relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 shadow-sm group"
         >
-          <div
-            class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          ></div>
-          <div class="relative">
-            <div class="flex items-center justify-between mb-6">
-              <p class="text-sm font-semibold opacity-90 uppercase">
-                Current Balance
-              </p>
-              <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <i
-                  class="i-material-symbols-account-balance-wallet text-2xl"
-                ></i>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-blue-500/10 transition-colors"></div>
+          <div class="relative flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600">
+                <UIcon name="i-heroicons-credit-card" class="w-6 h-6" />
+              </div>
+              <span class="text-sm font-black text-slate-400 uppercase tracking-widest">Total Balance</span>
+            </div>
+            <div class="mt-auto">
+              <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-1">{{ currency(balance) }}</h2>
+              <div class="flex items-center gap-2">
+                <span class="flex h-2 w-2 rounded-full" :class="balance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                <p class="text-xs font-bold" :class="balance >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                  {{ balance >= 0 ? 'Surplus' : 'Deficit' }} this period
+                </p>
               </div>
             </div>
-            <p class="text-4xl font-black mb-2">{{ currency(balance) }}</p>
-            <p class="text-sm opacity-80">
-              {{ balance > 0 ? "✅ Positive" : "⚠️ Negative" }}
-            </p>
           </div>
-        </div>
+        </Motion>
 
         <!-- Income Card -->
-        <div
-          class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-white p-8"
+        <Motion 
+           :initial="{ opacity: 0, y: 40 }"
+           :animate="{ opacity: 1, y: 0 }"
+           :transition="{ duration: 0.8, delay: 0.35 }"
+           class="stat-card relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 shadow-sm group"
         >
-          <div
-            class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          ></div>
-          <div class="relative">
-            <div class="flex items-center justify-between mb-6">
-              <p class="text-sm font-semibold opacity-90 uppercase">
-                Total Income
-              </p>
-              <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <i class="i-material-symbols-trending-up-outline text-2xl"></i>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
+          <div class="relative flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
+                <UIcon name="i-heroicons-arrow-trending-up" class="w-6 h-6" />
               </div>
+              <span class="text-sm font-black text-slate-400 uppercase tracking-widest">Total Income</span>
             </div>
-            <p class="text-4xl font-black mb-2">+{{ currency(incomeTotal) }}</p>
-            <p class="text-sm opacity-80">💰 This {{ selectedView }}</p>
+            <div class="mt-auto">
+              <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-1">{{ currency(incomeTotal) }}</h2>
+              <p class="text-xs font-bold text-slate-400">Received this {{ selectedView.toLowerCase() }}</p>
+            </div>
           </div>
-        </div>
+        </Motion>
 
         <!-- Expense Card -->
-        <div
-          class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-400 via-red-500 to-rose-600 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-white p-8"
+        <Motion 
+           :initial="{ opacity: 0, y: 40 }"
+           :animate="{ opacity: 1, y: 0 }"
+           :transition="{ duration: 0.8, delay: 0.5 }"
+           class="stat-card relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 shadow-sm group"
         >
-          <div
-            class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          ></div>
-          <div class="relative">
-            <div class="flex items-center justify-between mb-6">
-              <p class="text-sm font-semibold opacity-90 uppercase">
-                Total Expense
-              </p>
-              <div class="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <i
-                  class="i-material-symbols-trending-down-outline text-2xl"
-                ></i>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-rose-500/10 transition-colors"></div>
+          <div class="relative flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-rose-50 dark:bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-600">
+                <UIcon name="i-heroicons-arrow-trending-down" class="w-6 h-6" />
+              </div>
+              <span class="text-sm font-black text-slate-400 uppercase tracking-widest">Total Expenses</span>
+            </div>
+            <div class="mt-auto">
+              <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-1">{{ currency(expenseTotal) }}</h2>
+              <p class="text-xs font-bold text-slate-400">Spent this {{ selectedView.toLowerCase() }}</p>
+            </div>
+          </div>
+        </Motion>
+      </section>
+
+      <!-- Main Content Grid -->
+      <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Recent Transactions -->
+        <Motion 
+           :initial="{ opacity: 0, y: 40 }"
+           :animate="{ opacity: 1, y: 0 }"
+           :transition="{ duration: 1.0, delay: 0.6 }"
+           class="main-content lg:col-span-8 space-y-6"
+        >
+          <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 class="text-xl font-black text-slate-900 dark:text-white">Recent Activity</h3>
+              <NuxtLink to="/transactions">
+                <UButton variant="ghost" color="gray" trailing-icon="i-heroicons-arrow-right" class="font-bold">View All</UButton>
+              </NuxtLink>
+            </div>
+            <div class="p-2">
+              <div v-if="recentTransactions.length > 0" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                 <div v-for="t in recentTransactions" :key="t._id" class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors group">
+                    <div class="flex items-center gap-4">
+                       <div :class="[
+                          'w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110',
+                          t.type.toLowerCase() === 'income' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600'
+                       ]">
+                          <UIcon :name="t.type.toLowerCase() === 'income' ? 'i-heroicons-banknotes' : 'i-heroicons-shopping-cart'" class="w-6 h-6" />
+                       </div>
+                       <div>
+                          <p class="font-bold text-slate-900 dark:text-white leading-none mb-1">{{ t.description }}</p>
+                          <p class="text-xs font-bold text-slate-400">{{ new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</p>
+                       </div>
+                    </div>
+                    <div class="text-right">
+                       <p :class="['text-lg font-black', t.type.toLowerCase() === 'income' ? 'text-emerald-600' : 'text-slate-900 dark:text-white']">
+                          {{ t.type.toLowerCase() === 'income' ? '+' : '-' }}{{ currency(t.amount) }}
+                       </p>
+                    </div>
+                 </div>
+              </div>
+              <div v-else class="py-20 text-center">
+                <UIcon name="i-heroicons-inbox" class="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+                <p class="text-slate-500 font-bold">No transactions found for this period.</p>
               </div>
             </div>
-            <p class="text-4xl font-black mb-2">
-              -{{ currency(expenseTotal) }}
-            </p>
-            <p class="text-sm opacity-80">📊 This {{ selectedView }}</p>
           </div>
-        </div>
-      </div>
-    </section>
+        </Motion>
 
-    <!-- Content Grid -->
-    <div
-      v-if="isHydrated && !loading"
-      class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12"
-    >
-      <!-- Recent Transactions (Main) -->
-      <div
-        class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8"
-      >
-        <div class="flex items-center justify-between mb-6">
-          <h2
-            class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
+        <!-- Sidebar Widgets -->
+        <div class="lg:col-span-4 space-y-6">
+          <!-- Top Expenses Widget -->
+          <Motion 
+            :initial="{ opacity: 0, x: 40 }"
+            :animate="{ opacity: 1, x: 0 }"
+            :transition="{ duration: 0.8, delay: 0.7 }"
+            class="sidebar-card bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm"
           >
-            <i class="i-material-symbols-receipt text-2xl text-blue-600"></i>
-            Recent Transactions
-          </h2>
-          <NuxtLink
-            to="/transactions"
-            class="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-          >
-            View All →
-          </NuxtLink>
-        </div>
-
-        <div v-if="recentTransactions.length > 0" class="space-y-3">
-          <div
-            v-for="transaction in recentTransactions"
-            :key="transaction._id"
-            class="group flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300"
-          >
-            <div class="flex items-center flex-1 min-w-0 gap-4">
-              <div
-                :class="[
-                  'p-3 rounded-lg flex-shrink-0',
-                  transaction.type.toLowerCase() === 'income'
-                    ? 'bg-green-100 dark:bg-green-900/30'
-                    : 'bg-red-100 dark:bg-red-900/30',
-                ]"
-              >
-                <i
-                  :class="[
-                    'text-lg',
-                    transaction.type.toLowerCase() === 'income'
-                      ? 'i-material-symbols-trending-up text-green-600'
-                      : 'i-material-symbols-trending-down text-red-600',
-                  ]"
-                ></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="font-semibold text-gray-900 dark:text-white truncate">
-                  {{ transaction.description }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{
-                    new Date(transaction.createdAt).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric" },
-                    )
-                  }}
-                </p>
-              </div>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white mb-6">Top Spending</h3>
+            <div v-if="topExpenses.length > 0" class="space-y-4">
+               <div v-for="([desc, amount]) in topExpenses" :key="desc" class="space-y-2">
+                  <div class="flex justify-between items-end">
+                    <span class="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{{ desc }}</span>
+                    <span class="text-sm font-black text-slate-900 dark:text-white">{{ currency(amount) }}</span>
+                  </div>
+                  <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-600 rounded-full" :style="{ width: `${(amount / expenseTotal) * 100}%` }"></div>
+                  </div>
+               </div>
             </div>
-            <p
-              :class="[
-                'text-lg font-bold flex-shrink-0',
-                transaction.type.toLowerCase() === 'income'
-                  ? 'text-green-600'
-                  : 'text-red-600',
-              ]"
-            >
-              {{ transaction.type.toLowerCase() === "income" ? "+" : "-"
-              }}{{ currency(transaction.amount) }}
-            </p>
-          </div>
-        </div>
-        <div v-else class="text-center py-8 text-gray-500">
-          No transactions yet. Start by adding one!
+            <div v-else class="py-10 text-center">
+              <p class="text-sm text-slate-400 font-bold">No data to display.</p>
+            </div>
+          </Motion>
+
+
+
         </div>
       </div>
 
-      <!-- Quick Stats Sidebar -->
-      <div class="space-y-6">
-        <!-- Transactions Count -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8">
-          <div class="flex items-center justify-between mb-4">
-            <p
-              class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase"
-            >
-              Transactions
-            </p>
-            <i class="i-material-symbols-counter text-2xl text-purple-600"></i>
-          </div>
-          <p class="text-3xl font-black text-gray-900 dark:text-white">
-            {{ transactionCount }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            This {{ selectedView }}
-          </p>
-        </div>
-
-        <!-- Top Expenses -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8">
-          <h3
-            class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <i
-              class="i-material-symbols-trending-down text-red-600 text-xl"
-            ></i>
-            Top Expenses
-          </h3>
-          <div v-if="topExpenses.length > 0" class="space-y-3">
-            <div
-              v-for="([desc, amount], idx) in topExpenses.slice(0, 3)"
-              :key="idx"
-              class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50"
-            >
-              <p
-                class="text-sm font-medium text-gray-900 dark:text-white truncate"
-              >
-                {{ desc }}
-              </p>
-              <p class="text-sm font-bold text-red-600 flex-shrink-0">
-                {{ currency(amount) }}
-              </p>
+      <!-- Loading State Skeleton -->
+      <div v-else class="space-y-8">
+         <div class="flex justify-between items-center">
+            <USkeleton class="h-10 w-48 rounded-lg" />
+            <USkeleton class="h-10 w-64 rounded-lg" />
+         </div>
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <USkeleton v-for="i in 3" :key="i" class="h-32 rounded-3xl" />
+         </div>
+         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <USkeleton class="lg:col-span-8 h-[500px] rounded-[2rem]" />
+            <div class="lg:col-span-4 space-y-6">
+               <USkeleton class="h-64 rounded-[2rem]" />
+               <USkeleton class="h-48 rounded-[2rem]" />
             </div>
-          </div>
-          <div v-else class="text-center py-4 text-gray-500 text-sm">
-            No expenses yet
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div
-          class="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8"
-        >
-          <h3
-            class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
-          >
-            <i class="i-material-symbols-flash-on text-yellow-500 text-xl"></i>
-            Quick Actions
-          </h3>
-          <div class="space-y-3">
-            <NuxtLink
-              to="/transactions"
-              class="block w-full px-4 py-2 text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200"
-            >
-              View Transactions
-            </NuxtLink>
-            <NuxtLink
-              to="/analytics"
-              class="block w-full px-4 py-2 text-center bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200"
-            >
-              View Analytics
-            </NuxtLink>
-          </div>
-        </div>
+         </div>
       </div>
     </div>
-
-    <!-- Loading State -->
-    <section v-else class="space-y-8">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-2xl" />
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <USkeleton class="lg:col-span-2 h-96 rounded-2xl" />
-        <div class="space-y-6">
-          <USkeleton class="h-40 rounded-2xl" />
-          <USkeleton class="h-40 rounded-2xl" />
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
 <style scoped>
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.min-h-screen > section,
-.min-h-screen > div:not(.absolute) {
-  animation: fadeIn 0.5s ease-out;
+.min-h-screen {
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 </style>
+

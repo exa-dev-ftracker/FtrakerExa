@@ -1,214 +1,98 @@
 <script setup lang="ts">
-definePageMeta({});
+const store = useDefaultStore();
+const toast = useToast();
+const userEmail = computed(() => store.user?.email || "user@example.com");
+const userName = computed(() => store.user?.name || "User");
 
 useHead({
-  title: "Settings - FTracker",
-  meta: [
-    {
-      name: "description",
-      content: "Manage your account settings and preferences.",
-    },
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
-  ],
+  title: "Settings - FTraker",
+  meta: [{ name: "description", content: "Manage your account settings" }],
 });
 
-const router = useRouter();
-const toast = useToast();
-const activeTab = ref<"account">("account");
-
-const tabs = [
-  // {
-  //   label: 'WhatsApp Integration',
-  //   icon: 'i-material-symbols-whatsapp',
-  //   slot: 'whatsapp',
-  // },
-  {
-    label: "Account",
-    icon: "i-material-symbols-account-circle-outline-rounded",
-    slot: "account",
-  },
-];
-
-// Load user account data
-onMounted(async () => {
+const fetchUser = async () => {
   try {
-    const res = await (useNuxtApp().$axios as any).get("/api/user/settings");
-    const response = res.data || res;
-
-    if (response?.body && "email" in response.body) {
-      const userEmail = document.getElementById("userEmail");
-
-      if (userEmail) {
-        userEmail.textContent = response.body.email || "Not available";
-      }
+    const res: any = await (useNuxtApp().$axios as any).get("/api/users/me");
+    if (res.data?.body?.user) {
+      store.setUser(res.data.body.user);
     }
-  } catch (error: any) {
-    console.debug(
-      "Failed to load user data:",
-      error?.data?.body?.message || error.message,
-    );
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+  }
+};
+
+onMounted(async () => {
+  if (!store.isAuth) {
+    return navigateTo("/login");
+  }
+  
+  if (!store.user) {
+    await fetchUser();
   }
 });
 </script>
 
 <template>
-  <section class="flex justify-between items-center mb-8">
-    <div>
-      <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white">
-        Settings
-      </h1>
-      <p class="text-gray-600 dark:text-gray-400 mt-2">
-        Manage your account and preferences
-      </p>
-    </div>
-    <UButton
-      to="/"
-      icon="i-material-symbols-arrow-back-rounded"
-      color="gray"
-      variant="ghost"
-      label="Back"
-    />
-  </section>
+  <div class="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+      <UNotifications />
 
-  <section class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-    <!-- Sidebar Navigation -->
-    <aside class="lg:col-span-1">
-      <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-20"
+      <!-- Page Header -->
+      <Motion 
+        :initial="{ opacity: 0, y: -20 }"
+        :animate="{ opacity: 1, y: 0 }"
+        :transition="{ duration: 0.8 }"
+        class="header-anim flex justify-between items-end mb-12"
       >
-        <nav class="space-y-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab.slot"
-            @click="activeTab = tab.slot as any"
-            class="w-full text-left px-4 py-3 rounded-lg font-medium transition flex items-center gap-2"
-            :class="[
-              activeTab === tab.slot
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
-            ]"
-          >
-            <UIcon :name="tab.icon" class="w-5 h-5" />
-            {{ tab.label }}
-          </button>
-        </nav>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="lg:col-span-3">
-      <!-- Account Settings Section -->
-      <section class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          Account Settings
-        </h2>
-        <div class="space-y-6">
-          <!-- Profile Information -->
-          <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
-            <h3
-              class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-            >
-              Profile Information
-            </h3>
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div class="space-y-3 text-sm">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-400">Email:</span>
-                  <span
-                    class="font-medium text-gray-900 dark:text-white"
-                    id="userEmail"
-                    >Loading...</span
-                  >
-                </div>
-              </div>
-            </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-blue-600 font-black uppercase tracking-[0.2em] text-[10px] mb-2">
+            <UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4" />
+            System Preferences
           </div>
-
-          <!-- Security Settings -->
-          <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
-            <h3
-              class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-            >
-              Security
-            </h3>
-            <UButton
-              label="Change Password"
-              icon="i-material-symbols-lock-outline"
-              color="blue"
-              @click="
-                toast.add({
-                  title: 'Coming Soon',
-                  description: 'Password change feature coming soon',
-                  color: 'blue',
-                })
-              "
-            />
-          </div>
-
-          <!-- Notification Preferences -->
-          <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
-            <h3
-              class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-            >
-              Notifications
-            </h3>
-            <div class="space-y-4">
-              <label class="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  class="w-4 h-4 rounded"
-                  checked
-                  disabled
-                />
-                <span class="ml-3 text-sm text-gray-700 dark:text-gray-300"
-                  >Email notifications for transactions</span
-                >
-              </label>
-            </div>
-          </div>
-
-          <!-- Danger Zone -->
-          <div
-            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
-          >
-            <h3
-              class="text-lg font-semibold text-red-900 dark:text-red-200 mb-3"
-            >
-              Danger Zone
-            </h3>
-            <UButton
-              label="Delete Account"
-              icon="i-material-symbols-delete-outline"
-              color="red"
-              @click="
-                toast.add({
-                  title: 'Coming Soon',
-                  description: 'Account deletion feature coming soon',
-                  color: 'blue',
-                })
-              "
-            />
-          </div>
+          <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Settings <span class="text-blue-600">.</span></h1>
+          <p class="text-gray-500 dark:text-gray-400 font-medium">Manage your account preferences and security.</p>
         </div>
-      </section>
-    </main>
-  </section>
+        <UButton to="/dashboard" icon="i-heroicons-arrow-left" color="gray" variant="soft" class="rounded-2xl px-6 font-black">Dashboard</UButton>
+      </Motion>
+      
+      <div class="w-full">
+        <!-- Main Content -->
+        <Motion 
+          :initial="{ opacity: 0, y: 30 }"
+          :animate="{ opacity: 1, y: 0 }"
+          :transition="{ duration: 0.8, delay: 0.2 }"
+          class="content-anim"
+        >
+          <div class="bg-white dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[3rem] p-10 shadow-xl shadow-gray-200/20 dark:shadow-none min-h-[500px]">
+             
+             <!-- Account Section -->
+             <div class="space-y-10">
+                <div class="space-y-2">
+                   <h2 class="text-2xl font-black text-gray-900 dark:text-white">Profile Identity</h2>
+                   <p class="text-gray-500 font-medium">Welcome back, <span class="text-blue-600">{{ userName }}</span>. Manage your account details here.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8">
+                   <div class="space-y-2">
+                      <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Account Email</label>
+                      <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-bold">{{ userEmail }}</div>
+                   </div>
+                </div>
+
+                <div class="pt-8 border-t border-gray-100 dark:border-white/5 space-y-6">
+                   <div class="space-y-2">
+                      <h3 class="text-lg font-black text-gray-900 dark:text-white">Security & Password</h3>
+                      <p class="text-gray-500 text-sm font-medium">Keep your account secure with regular updates.</p>
+                   </div>
+                   <UButton label="Update Password" icon="i-heroicons-key" color="primary" size="xl" class="rounded-2xl px-8 font-black" @click="toast.add({ title: 'Secure Link Sent', description: 'Check your email for password reset instructions.', color: 'blue' })" />
+                </div>
+             </div>
+
+          </div>
+        </Motion>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* Animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-section {
-  animation: slideIn 0.3s ease-out;
-}
 </style>

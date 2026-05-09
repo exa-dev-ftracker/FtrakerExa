@@ -28,7 +28,10 @@ export default defineNuxtConfig({
   googleSignIn: {
     clientId: "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com"
   },
-  modules: ['@pinia/nuxt', '@nuxt/ui', 'nuxt-vue3-google-signin'],
+  modules: ['@pinia/nuxt', '@nuxt/ui', 'nuxt-vue3-google-signin', 'motion-v/nuxt'],
+  motionV: {
+    directives: true,
+  },
   runtimeConfig: {
     secretJwtKey: process.env.NUXT_SECRETJWT,
     REDIS_URL: process.env.NUXT_REDIS_URL,

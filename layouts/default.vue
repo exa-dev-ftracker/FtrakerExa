@@ -3,25 +3,19 @@ const store = useDefaultStore();
 const router = useRouter();
 const cookie = ref<string | null>("");
 
-useAsyncData("jwt", async () => {
+const { data: jwtVal } = await useAsyncData("jwt", async () => {
   const jwt = useCookie("jwt");
   if (!jwt.value && !store.isAuth) {
-    return router.push("/login");
-  } else if (jwt.value) {
-    return (cookie.value = jwt.value);
-  } else {
-    return (cookie.value = store.jwt);
+    if (router.currentRoute.value.path !== '/' && !['/login', '/register'].includes(router.currentRoute.value.path)) {
+      router.push("/login");
+    }
   }
+  return jwt.value || store.jwt || null;
 });
 
-// onMounted(() => {
-//     useAsyncData('jwt', async () => {
-//         return cookie.value = useCookie<{ value: string }>('jwt').value
-//     })
-// })
-
-if (cookie.value) {
-  store.login(cookie.value);
+if (jwtVal.value) {
+  store.login(jwtVal.value);
+  cookie.value = jwtVal.value;
 }
 
 const handleLogout = async () => {
@@ -33,8 +27,6 @@ const handleLogout = async () => {
     if (data.statusCode === 200) {
       store.logout();
       return router.push("/login");
-    } else {
-      return alert("An error occurred while trying to sign out");
     }
   } catch (err: any) {
     console.error(err);
@@ -43,36 +35,38 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <section class="container mx-auto">
+  <div class="min-h-screen bg-white dark:bg-[#030712] flex flex-col selection:bg-blue-500/30">
     <Header>
-      <div v-if="!store.isAuth">
-        <NuxtLink to="/login">
-          <UButton label="Login" />
+      <template v-if="!store.isAuth">
+        <NuxtLink to="/login" v-if="router.currentRoute.value.path !== '/login'">
+          <UButton label="Sign In" variant="ghost" color="gray" class="font-black rounded-xl" />
         </NuxtLink>
-        <NuxtLink to="/register">
-          <UButton color="gray" label="Register" />
+        <NuxtLink to="/register" v-if="router.currentRoute.value.path !== '/register'">
+          <UButton label="Get Started" color="blue" class="font-black rounded-xl px-6 shadow-lg shadow-blue-500/20" />
         </NuxtLink>
-      </div>
-      <div v-else>
-        <UButton @click="handleLogout" color="gray" label="Logout" />
-      </div>
+      </template>
+      <template v-else>
+        <UButton @click="handleLogout" icon="i-heroicons-arrow-left-on-rectangle" color="gray" variant="ghost" class="rounded-xl" />
+      </template>
     </Header>
-    <!-- <header class="flex pt-4 justify-between container mx-auto">
-            <h1 class="">My Nuxt App</h1>
-            <nav class="flex gap-3 items-center">
-
-                <NuxtLink to="/">Home</NuxtLink>
-                <NuxtLink to="/about">About</NuxtLink>
-            </nav>
-        </header> -->
-    <main class="grow">
+    
+    <main class="flex-grow">
       <slot />
     </main>
+
     <PWAInstallPrompt />
     <OfflineBanner />
-  </section>
+  </div>
 </template>
 
 <style>
-/* Tambahkan gaya CSS sesuai kebutuhan */
+body {
+  @apply antialiased text-gray-900 dark:text-white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+::selection {
+  background: rgba(59, 130, 246, 0.2);
+}
 </style>
+
