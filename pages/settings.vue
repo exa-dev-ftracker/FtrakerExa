@@ -3,6 +3,7 @@ const store = useDefaultStore();
 const toast = useToast();
 const userEmail = computed(() => store.user?.email || "user@example.com");
 const userName = computed(() => store.user?.name || "User");
+const isRequestingReset = ref(false);
 
 useHead({
   title: "Settings - FTraker",
@@ -31,6 +32,27 @@ onMounted(async () => {
     await fetchUser();
   }
 });
+
+const requestPasswordReset = async () => {
+  try {
+    isRequestingReset.value = true;
+    await ($axios as any).post("/api/auth/request-password-reset");
+    toast.add({ 
+      title: 'Secure Link Sent', 
+      description: 'Check your email for password reset instructions.', 
+      color: 'green' 
+    });
+  } catch (err: any) {
+    console.error(err);
+    toast.add({ 
+      title: 'Failed to send', 
+      description: err.response?.data?.statusMessage || 'An error occurred while sending the email.', 
+      color: 'red' 
+    });
+  } finally {
+    isRequestingReset.value = false;
+  }
+};
 </script>
 
 <template>
@@ -85,7 +107,15 @@ onMounted(async () => {
                       <h3 class="text-lg font-black text-gray-900 dark:text-white">Security & Password</h3>
                       <p class="text-gray-500 text-sm font-medium">Keep your account secure with regular updates.</p>
                    </div>
-                   <UButton label="Update Password" icon="i-heroicons-key" color="primary" size="xl" class="rounded-2xl px-8 font-black" @click="toast.add({ title: 'Secure Link Sent', description: 'Check your email for password reset instructions.', color: 'blue' })" />
+                   <UButton 
+                     :loading="isRequestingReset"
+                     label="Update Password via Email" 
+                     icon="i-heroicons-key" 
+                     color="primary" 
+                     size="xl" 
+                     class="rounded-2xl px-8 font-black" 
+                     @click="requestPasswordReset" 
+                   />
                 </div>
              </div>
 

@@ -34,6 +34,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     secretJwtKey: process.env.NUXT_SECRETJWT,
+    resendApiKey: process.env.RESEND_API_KEY || '',
     REDIS_URL: process.env.NUXT_REDIS_URL,
     MONGODB_URL: process.env.NUXT_MONGODB_URL,
     google: {
