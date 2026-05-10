@@ -111,7 +111,7 @@ watch(selectedView, () => refresh());
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50/50 dark:bg-[#030712] py-8 sm:py-12">
+  <div class="min-h-screen bg-gray-50/50 dark:bg-[#030712] pt-8 pb-32 sm:py-12">
     <div class="max-w-5xl mx-auto px-6 lg:px-8">
       <UNotifications />
 
@@ -235,7 +235,7 @@ watch(selectedView, () => refresh());
             :transition="{ duration: 0.8 }"
             class="transaction-group-anim"
           >
-            <div class="flex items-center justify-between mb-6 px-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 px-2 gap-4">
               <div class="flex items-center gap-3">
                 <div class="w-1 h-8 bg-blue-600 rounded-full"></div>
                 <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">

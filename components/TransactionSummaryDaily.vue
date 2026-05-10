@@ -52,45 +52,36 @@ const icon = computed(() => totalDay.value > 0 ? 'i-material-symbols-trending-up
 </script>
 
 <template>
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <!-- Total for Day -->
-        <div class="flex items-center gap-3">
-            <div class="inline-flex items-center justify-center p-2 rounded-lg" :class="{
-                'bg-green-100 dark:bg-green-900/30': color === 'green',
-                'bg-red-100 dark:bg-red-900/30': color === 'red',
-                'bg-gray-100 dark:bg-gray-800': color === 'gray'
-            }">
-                <i :class="[icon, 'text-xl', {
-                    'text-green-600 dark:text-green-400': color === 'green',
-                    'text-red-600 dark:text-red-400': color === 'red',
-                    'text-gray-600 dark:text-gray-400': color === 'gray'
-                }]"></i>
+    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4 sm:gap-6 bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-white/5 p-3 sm:px-5 sm:py-3 rounded-2xl shadow-sm transition-all hover:shadow-md">
+        <!-- Breakdown -->
+        <div class="flex items-center gap-3 sm:gap-5">
+            <div class="text-left sm:text-right">
+                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Income</p>
+                <p class="text-xs sm:text-sm font-bold text-emerald-500">
+                    +{{ currency(incomeTotal) }}
+                </p>
             </div>
-            <div>
-                <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wider">Daily Net</p>
-                <p class="text-xl md:text-2xl font-black transition-all" :class="{
-                    'bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent': color === 'green',
-                    'bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent': color === 'red',
-                    'text-gray-900 dark:text-white': color === 'gray'
-                }">
-                    {{ totalDay > 0 ? '+' : '' }}{{ currency(totalDay) }}
+            <div class="w-px h-6 bg-gray-100 dark:bg-gray-800"></div>
+            <div class="text-left sm:text-right">
+                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Expense</p>
+                <p class="text-xs sm:text-sm font-bold text-rose-500">
+                    -{{ currency(expenseTotal) }}
                 </p>
             </div>
         </div>
 
-        <!-- Income & Expense Breakdown -->
-        <div class="flex items-center gap-4">
-            <div class="text-right">
-                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wider">Income</p>
-                <p class="text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    +{{ currency(incomeTotal) }}
-                </p>
-            </div>
-            <div class="hidden sm:block w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent dark:via-gray-600"></div>
-            <div class="text-right">
-                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wider">Expense</p>
-                <p class="text-lg md:text-xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                    -{{ currency(expenseTotal) }}
+        <div class="w-px h-8 bg-gray-100 dark:bg-gray-800"></div>
+
+        <!-- Net -->
+        <div class="text-right flex items-center gap-2">
+            <div>
+                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Net</p>
+                <p class="text-sm sm:text-base font-black tracking-tight" :class="{
+                    'text-emerald-500': color === 'green',
+                    'text-rose-500': color === 'red',
+                    'text-gray-900 dark:text-white': color === 'gray'
+                }">
+                    {{ totalDay > 0 ? '+' : '' }}{{ currency(totalDay) }}
                 </p>
             </div>
         </div>

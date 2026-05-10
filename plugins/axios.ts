@@ -18,7 +18,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     })
 
     // 🔄 AUTO BASEURL - mengikuti parent domain
-    let baseURL = config.public?.apiBaseUrl || '/'
+    let baseURL:string = (config.public?.apiBaseUrl as string) || '/'
     if (import.meta.client && typeof window !== 'undefined') {
         // Client-side: gunakan window.location.origin (otomatis ngikutin domain saat ini)
         baseURL = window.location.origin
@@ -30,7 +30,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const api: AxiosInstance = axios.create({
-      baseURL: baseURL,
+        baseURL: baseURL,
         withCredentials: true,
     })
 

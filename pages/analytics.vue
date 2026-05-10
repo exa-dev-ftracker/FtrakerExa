@@ -58,7 +58,7 @@ watch(selectedView, () => refresh());
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-[#030712] py-8 sm:py-12">
+  <div class="min-h-screen bg-white dark:bg-[#030712] pt-8 pb-32 sm:py-12">
     <div class="max-w-6xl mx-auto px-6 lg:px-8">
       <UNotifications />
 

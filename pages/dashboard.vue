@@ -122,7 +122,7 @@ const currency = (val: number) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] p-4 md:p-8">
+  <div class="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] p-4 pb-32 md:p-8">
     <UNotifications />
 
     <div class="max-w-7xl mx-auto space-y-8">
