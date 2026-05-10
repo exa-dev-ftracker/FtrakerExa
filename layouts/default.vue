@@ -2,6 +2,7 @@
 const store = useDefaultStore();
 const router = useRouter();
 const cookie = ref<string | null>("");
+const { $axios } = useNuxtApp();
 
 const { data: jwtVal } = await useAsyncData("jwt", async () => {
   const jwt = useCookie("jwt");
@@ -18,9 +19,30 @@ if (jwtVal.value) {
   cookie.value = jwtVal.value;
 }
 
+await useAsyncData("user_me", async () => {
+  if (cookie.value && !store.user) {
+    try {
+      const res = await ($axios as any).get("/api/users/me");
+      if (res.data?.body?.user) {
+        store.setUser(res.data.body.user);
+        return res.data.body.user;
+      }
+    } catch (err) {
+      console.error("Failed to fetch user in layout:", err);
+      // If token is invalid, clear it
+      useCookie("jwt").value = null;
+      store.logout();
+      if (router.currentRoute.value.path !== '/' && !['/login', '/register'].includes(router.currentRoute.value.path)) {
+        router.push("/login");
+      }
+    }
+  }
+  return null;
+});
+
 const handleLogout = async () => {
   try {
-    const res = await (useNuxtApp().$axios as any).post("/api/auth/logout", {
+    const res = await ($axios as any).post("/api/auth/logout", {
       token: store.jwt,
     });
     const data = res.data || res;
