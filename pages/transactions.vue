@@ -28,9 +28,10 @@ const transactionDetail = reactive<Transaction>({
   updatedAt: "",
 });
 
+const { $axios } = useNuxtApp();
 const { data, status, error, refresh } = useAsyncData<TransactionResponse>("transactionsUser", async () => {
     try {
-      const res = await (useNuxtApp().$axios as any).get(`/api/transaction?view=${selectedView.value}`);
+      const res = await ($axios as any).get(`/api/transaction?view=${selectedView.value}`);
       return res.data || res;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to fetch transactions");

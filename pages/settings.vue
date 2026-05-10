@@ -9,9 +9,11 @@ useHead({
   meta: [{ name: "description", content: "Manage your account settings" }],
 });
 
+const { $axios } = useNuxtApp();
+
 const fetchUser = async () => {
   try {
-    const res: any = await (useNuxtApp().$axios as any).get("/api/users/me");
+    const res: any = await ($axios as any).get("/api/users/me");
     if (res.data?.body?.user) {
       store.setUser(res.data.body.user);
     }

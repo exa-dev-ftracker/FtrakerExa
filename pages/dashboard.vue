@@ -21,6 +21,7 @@ if (!jwt.value) {
 
 const selectedView = ref<"Week" | "Month" | "Year">("Month");
 
+const { $axios } = useNuxtApp();
 const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
   "dashboardData",
   async () => {
@@ -29,7 +30,7 @@ const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
       if (!jwt.value) {
         throw new Error("No JWT token found");
       }
-      const res = await (useNuxtApp().$axios as any).get(
+      const res = await ($axios as any).get(
         `/api/transaction?view=${selectedView.value}`,
       );
       return res.data || res;
