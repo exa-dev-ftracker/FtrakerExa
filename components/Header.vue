@@ -49,7 +49,8 @@ watch(() => route.path, () => updateIndicator())
 </script>
 
 <template>
-    <div class="relative z-50">
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/5">
         <header class="w-full py-6 sm:py-8 px-6 sm:px-10 flex items-center justify-between gap-8">
             <!-- Logo -->
             <Motion 
@@ -124,6 +125,7 @@ watch(() => route.path, () => updateIndicator())
                 <slot />
             </div>
         </header>
+    </div>
 
         <!-- Mobile Bottom Navigation -->
         <nav v-if="store.isAuth" class="lg:hidden fixed bottom-6 left-6 right-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-[100] flex items-center justify-around px-4">
@@ -138,5 +140,4 @@ watch(() => route.path, () => updateIndicator())
                 <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
             </NuxtLink>
         </nav>
-    </div> 
 </template>
