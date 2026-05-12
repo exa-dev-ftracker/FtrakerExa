@@ -11,25 +11,13 @@ useHead({
 });
 
 const toast = useToast();
-const router = useRouter();
 const store = useDefaultStore();
-const isModalOpen = ref(false);
 const isLoading = ref(false);
-const isEdit = ref(false);
 const selectedView = ref(transactionViewOptions[2]);
 const isHydrated = ref(false);
 
-const transactionDetail = reactive<Transaction>({
-  createdAt: `${new Date().toISOString().split("T")[0]}`,
-  description: "",
-  type: "",
-  amount: 0,
-  _id: "",
-  updatedAt: "",
-});
-
 const { $axios } = useNuxtApp();
-const { data, status, error, refresh } = useAsyncData<TransactionResponse>("transactionsUser", async () => {
+const { data, status, refresh } = useAsyncData<TransactionResponse>("transactionsUser", async () => {
     try {
       const res = await ($axios as any).get(`/api/transaction?view=${selectedView.value}`);
       return res.data || res;
@@ -66,7 +54,7 @@ const transactionByDate = computed(() => {
     filtered = filtered.filter(t => t.description.toLowerCase().includes(query) || t.amount.toString().includes(query));
   }
 
-  // Sort logic...
+  // Sort logic
   if (sortBy.value === "newest") filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   else if (sortBy.value === "oldest") filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   else if (sortBy.value === "highest") filtered.sort((a, b) => b.amount - a.amount);
@@ -95,20 +83,13 @@ const handleDeleteTransaction = async (id: string) => {
 };
 
 const handleEdit = (date: string, _id: string) => {
-  isEdit.value = true;
   const transaction = transactionByDate.value[date]?.find(t => t._id === _id);
   if (!transaction) return;
-  Object.assign(transactionDetail, { ...transaction, createdAt: transaction.createdAt.split("T")[0] });
-  isModalOpen.value = true;
-};
-
-const handleOpenModal = (value: boolean) => {
-  isEdit.value = false;
-  isModalOpen.value = value;
-  if (!value) Object.assign(transactionDetail, { createdAt: new Date().toISOString().split("T")[0], description: "", type: "", amount: 0 });
+  store.editTransaction(transaction);
 };
 
 watch(selectedView, () => refresh());
+watch(() => store.refreshTrigger, () => refresh());
 </script>
 
 <template>
@@ -144,7 +125,7 @@ watch(selectedView, () => refresh());
             class="rounded-xl"
           />
           <UButton 
-            @click="handleOpenModal(true)" 
+            @click="store.toggleTransactionModal(true)" 
             icon="i-heroicons-plus" 
             color="primary" 
             size="lg"
@@ -206,8 +187,6 @@ watch(selectedView, () => refresh());
         </div>
       </Motion>
 
-      <Modal :isEdit="isEdit" v-model:isModalOpen="isModalOpen" :data="isEdit ? transactionDetail : undefined" @submit="refresh" />
-
       <!-- Content -->
       <div v-if="isHydrated">
         <div v-if="loading" class="space-y-8">
@@ -224,7 +203,7 @@ watch(selectedView, () => refresh());
           </div>
           <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">No matching transactions</h3>
           <p class="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-8 font-medium">Try adjusting your filters or add a new transaction to get started.</p>
-          <UButton @click="handleOpenModal(true)" color="primary" size="lg" class="rounded-2xl px-8 font-black">Add Transaction</UButton>
+          <UButton @click="store.toggleTransactionModal(true)" color="primary" size="lg" class="rounded-2xl px-8 font-black">Add Transaction</UButton>
         </div>
 
         <div v-else class="space-y-12">
@@ -275,4 +254,3 @@ watch(selectedView, () => refresh());
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
-

@@ -128,16 +128,43 @@ watch(() => route.path, () => updateIndicator())
     </div>
 
         <!-- Mobile Bottom Navigation -->
-        <nav v-if="store.isAuth" class="lg:hidden fixed bottom-6 left-6 right-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-[100] flex items-center justify-around px-4">
-            <NuxtLink 
-                v-for="item in links" 
-                :key="item.path" 
-                :to="item.path" 
-                class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
-                :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
-            >
-                <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
-                <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
-            </NuxtLink>
+        <nav v-if="store.isAuth" class="lg:hidden fixed bottom-6 left-6 right-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-40 flex items-center justify-between px-6">
+            <!-- Left Side Links -->
+            <div class="flex items-center gap-6">
+                <NuxtLink 
+                    v-for="item in links.slice(0, 2)" 
+                    :key="item.path" 
+                    :to="item.path" 
+                    class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
+                    :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
+                >
+                    <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
+                </NuxtLink>
+            </div>
+
+            <!-- Central Add Button -->
+            <div class="relative -mt-12">
+                <button 
+                    @click="store.toggleTransactionModal(true)"
+                    class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/40 border-4 border-white dark:border-gray-900 transform active:scale-90 transition-all duration-300"
+                >
+                    <UIcon name="i-heroicons-plus" class="w-8 h-8 text-white" />
+                </button>
+            </div>
+
+            <!-- Right Side Links -->
+            <div class="flex items-center gap-6">
+                <NuxtLink 
+                    v-for="item in links.slice(2)" 
+                    :key="item.path" 
+                    :to="item.path" 
+                    class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
+                    :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
+                >
+                    <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
+                </NuxtLink>
+            </div>
         </nav>
 </template>

@@ -78,6 +78,13 @@ const handleLogout = async () => {
 
     <PWAInstallPrompt />
     <OfflineBanner />
+    <Modal 
+      v-if="store.isAuth"
+      :isEdit="!!store.transactionToEdit" 
+      :data="store.transactionToEdit || undefined"
+      v-model:isModalOpen="store.isTransactionModalOpen" 
+      @submit="store.triggerRefresh" 
+    />
   </div>
 </template>
 

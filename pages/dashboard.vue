@@ -107,6 +107,8 @@ watch(selectedView, async () => {
   await refresh();
 });
 
+watch(() => store.refreshTrigger, () => refresh());
+
 watch(error, (newError) => {
   if (newError && isHydrated.value) {
     toast.add({
@@ -157,7 +159,7 @@ const currency = (val: number) => {
                 {{ v }}
              </button>
           </div>
-          <UButton icon="i-heroicons-plus" color="primary" class="rounded-xl px-4 py-2.5 font-bold shadow-lg shadow-blue-500/25">
+          <UButton @click="store.toggleTransactionModal(true)" icon="i-heroicons-plus" color="primary" class="rounded-xl px-4 py-2.5 font-bold shadow-lg shadow-blue-500/25">
              Add New
           </UButton>
         </div>
