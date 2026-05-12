@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
             setResponseStatus(event, 200);
             return {
                 statusCode: 200,
-                body: {message: "Login successful", token},
+                body: {message: "Login successful", token, user: dataUser},
             };
         } else {
             // New user - create account without password
@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
             setResponseStatus(event, 201);
             return {
                 statusCode: 201,
-                body: {message: "User created successfully", token},
+                body: {message: "User created successfully", token, user: dataUser},
             };
         }
     } catch (error) {

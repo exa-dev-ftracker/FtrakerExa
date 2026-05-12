@@ -40,6 +40,7 @@ const handleGoogleSignUp = async (response: CredentialResponse) => {
 
     if (data.statusCode === 201 || data.statusCode === 200) {
       store.login(data.body.token);
+      if (data.body.user) store.setUser(data.body.user);
       toast.add({ title: "Welcome! 🎉", description: "Account ready.", color: "green" });
       return router.push(data.statusCode === 201 ? "/setup-password" : "/dashboard");
     }

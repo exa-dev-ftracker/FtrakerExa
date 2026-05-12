@@ -30,6 +30,7 @@ const handleLoginSuccess = async (response: CredentialResponse) => {
 
     if (data.statusCode === 200 || data.statusCode === 201) {
       store.login(data.body.token);
+      if (data.body.user) store.setUser(data.body.user);
       toast.add({ title: "Success", description: "Logged in successfully!", color: "green" });
       return router.push("/dashboard");
     } else {
@@ -62,6 +63,7 @@ const submit = async () => {
 
     if (data.statusCode === 200) {
       store.login(data.body.token);
+      if (data.body.user) store.setUser(data.body.user);
       toast.add({ title: "Welcome back!", description: "Successfully logged in.", color: "green" });
       return router.push("/dashboard");
     } else {

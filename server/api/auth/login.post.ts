@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
                 setResponseStatus(event, 200);
                 return {
                     statusCode: 200,
-                    body: {message: "Success", token},
+                    body: {message: "Success", token, user: dataUser},
                 };
             } else {
                 setResponseStatus(event, 401);
