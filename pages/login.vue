@@ -124,7 +124,7 @@ const submit = async () => {
         class="login-card bg-white dark:bg-gray-900/50 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
         <!-- Brand Header -->
-        <div class="p-10 pb-0 text-center">
+        <div class="p-6 sm:p-10 pb-0 text-center">
            <NuxtLink to="/" class="inline-flex items-center gap-3 mb-8 group">
               <div class="w-12 h-12 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                 <UIcon name="i-heroicons-wallet" class="w-7 h-7 text-white" />
@@ -145,7 +145,7 @@ const submit = async () => {
             >Continue your financial journey today.</Motion>
         </div>
 
-        <div class="p-10 space-y-6">
+        <div class="p-6 sm:p-10 space-y-6">
            <!-- Error Alert -->
            <Motion v-if="error" 
               :initial="{ opacity: 0, y: 10 }"
@@ -235,7 +235,7 @@ const submit = async () => {
             :initial="{ opacity: 0 }"
             :animate="{ opacity: 1 }"
             :transition="{ delay: 1.1 }"
-            class="p-10 pt-0 text-center"
+            class="p-6 sm:p-10 pt-0 text-center"
           >
             <p class="text-gray-500 dark:text-gray-400 font-bold">
                New here? 

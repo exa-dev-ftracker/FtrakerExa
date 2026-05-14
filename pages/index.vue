@@ -23,16 +23,16 @@ const store = useDefaultStore()
 
     <!-- Navbar -->
     <header class="fixed top-0 w-full bg-white/70 dark:bg-[#030712]/70 backdrop-blur-xl z-50 border-b border-gray-200/50 dark:border-gray-800/50">
-      <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-3 group cursor-pointer">
-          <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:rotate-12 transition-transform duration-500">
-            <UIcon name="i-heroicons-moon-20-solid" class="w-6 h-6 text-white" />
+      <div class="container mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:rotate-12 transition-transform duration-500">
+            <UIcon name="i-heroicons-moon-20-solid" class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <span class="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tighter">FTraker<span class="text-blue-600">.</span></span>
+          <span class="text-xl sm:text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tighter">FTraker<span class="text-blue-600">.</span></span>
         </div>
         
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           <ClientOnly>
             <Motion
               :key="$colorMode.value"
@@ -45,19 +45,19 @@ const store = useDefaultStore()
                   color="gray"
                   variant="ghost"
                   aria-label="Theme"
-                  class="rounded-xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5"
+                  class="rounded-xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5"
                   @click="$colorMode.preference = $colorMode.value === 'dark' ? 'light' : 'dark'"
               />
             </Motion>
           </ClientOnly>
-          <NuxtLink v-if="!store.isAuth" to="/login" class="text-sm font-black text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors px-4 py-2">
+          <NuxtLink v-if="!store.isAuth" to="/login" class="hidden sm:block text-sm font-black text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors px-4 py-2">
             Sign In
           </NuxtLink>
           <NuxtLink v-if="!store.isAuth" to="/register">
-            <UButton color="primary" size="lg" class="rounded-2xl px-8 shadow-xl shadow-blue-500/25 font-black">Get Started</UButton>
+            <UButton color="primary" size="lg" class="rounded-2xl px-4 sm:px-8 shadow-xl shadow-blue-500/25 font-black text-sm sm:text-base">Get Started</UButton>
           </NuxtLink>
           <NuxtLink v-else to="/dashboard">
-            <UButton color="primary" size="lg" variant="soft" class="rounded-2xl px-8 font-black" trailing-icon="i-heroicons-arrow-right-20-solid">Dashboard</UButton>
+            <UButton color="primary" size="lg" variant="soft" class="rounded-2xl px-4 sm:px-8 font-black text-sm sm:text-base" trailing-icon="i-heroicons-arrow-right-20-solid">Dashboard</UButton>
           </NuxtLink>
         </div>
       </div>
@@ -84,7 +84,7 @@ const store = useDefaultStore()
           :animate="{ opacity: 1, y: 0 }"
           :transition="{ duration: 0.8, delay: 0.3 }"
         >
-          <h1 class="text-6xl sm:text-8xl lg:text-9xl font-black text-gray-900 dark:text-white leading-[0.85] tracking-tighter mb-8">
+          <h1 class="text-5xl sm:text-8xl lg:text-9xl font-black text-gray-900 dark:text-white leading-[0.85] tracking-tighter mb-8">
             Master your <br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-gradient">capital.</span>
           </h1>

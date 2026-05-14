@@ -37,16 +37,16 @@ const action = [
         <!-- Interactive Gradient Hover -->
         <div class="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/[0.02] group-hover:via-purple-500/[0.02] group-hover:to-pink-500/[0.02] transition-all duration-500"></div>
 
-        <div class="relative p-4 sm:p-8">
+        <div class="relative p-3 sm:p-8">
             <div class="flex flex-row items-center justify-between gap-3 sm:gap-6">
                 <!-- Left: Visual & Identity -->
                 <div class="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
-                    <div :class="['w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3', colorClass]">
-                        <UIcon :name="icon" class="w-7 h-7" />
+                    <div :class="['w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3', colorClass]">
+                        <UIcon :name="icon" class="w-5 h-5 sm:w-7 sm:h-7" />
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-base sm:text-lg font-black text-gray-900 dark:text-white truncate transition-colors group-hover:text-blue-600">
+                        <h4 class="text-sm sm:text-lg font-black text-gray-900 dark:text-white truncate transition-colors group-hover:text-blue-600">
                             {{ props.data.description }}
                         </h4>
                         <div class="flex items-center gap-3 mt-1.5">
@@ -57,8 +57,8 @@ const action = [
 
                 <!-- Right: Financials & Menu -->
                 <div class="flex items-center gap-2 sm:gap-6">
-                    <div class="text-right">
-                        <p :class="['text-base sm:text-xl font-black tracking-tight transition-all duration-500 group-hover:scale-105', isIncome ? 'text-emerald-500' : 'text-rose-500']">
+                    <div class="text-right shrink-0">
+                        <p :class="['text-sm sm:text-xl font-black tracking-tight transition-all duration-500 group-hover:scale-105', isIncome ? 'text-emerald-500' : 'text-rose-500']">
                             {{ isIncome ? '+' : '-' }}{{ currency(props.data.amount) }}
                         </p>
                     </div>

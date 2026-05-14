@@ -52,39 +52,36 @@ const icon = computed(() => totalDay.value > 0 ? 'i-material-symbols-trending-up
 </script>
 
 <template>
-    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4 sm:gap-6 bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-white/5 p-3 sm:px-5 sm:py-3 rounded-2xl shadow-sm transition-all hover:shadow-md">
-        <!-- Breakdown -->
-        <div class="flex items-center gap-3 sm:gap-5">
-            <div class="text-left sm:text-right">
-                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Income</p>
-                <p class="text-xs sm:text-sm font-bold text-emerald-500">
-                    +{{ currency(incomeTotal) }}
-                </p>
-            </div>
-            <div class="w-px h-6 bg-gray-100 dark:bg-gray-800"></div>
-            <div class="text-left sm:text-right">
-                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Expense</p>
-                <p class="text-xs sm:text-sm font-bold text-rose-500">
-                    -{{ currency(expenseTotal) }}
-                </p>
-            </div>
+    <div class="w-full sm:w-auto grid grid-cols-3 sm:flex items-center justify-between sm:justify-end gap-1 sm:gap-6 bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-white/5 p-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-sm transition-all hover:shadow-md">
+        
+        <!-- Income -->
+        <div class="text-center sm:text-right overflow-hidden">
+            <p class="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-tighter sm:tracking-widest truncate">Income</p>
+            <p class="text-[9px] sm:text-sm font-bold text-emerald-500 truncate">
+                +{{ currency(incomeTotal) }}
+            </p>
         </div>
 
-        <div class="w-px h-8 bg-gray-100 dark:bg-gray-800"></div>
+        <!-- Expense -->
+        <div class="text-center sm:text-right border-x border-gray-100 dark:border-gray-800 sm:border-0 px-1 sm:px-0 overflow-hidden">
+            <p class="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-tighter sm:tracking-widest truncate">Expense</p>
+            <p class="text-[9px] sm:text-sm font-bold text-rose-500 truncate">
+                -{{ currency(expenseTotal) }}
+            </p>
+        </div>
 
         <!-- Net -->
-        <div class="text-right flex items-center gap-2">
-            <div>
-                <p class="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-widest">Net</p>
-                <p class="text-sm sm:text-base font-black tracking-tight" :class="{
-                    'text-emerald-500': color === 'green',
-                    'text-rose-500': color === 'red',
-                    'text-gray-900 dark:text-white': color === 'gray'
-                }">
-                    {{ totalDay > 0 ? '+' : '' }}{{ currency(totalDay) }}
-                </p>
-            </div>
+        <div class="text-center sm:text-right sm:border-l sm:border-gray-100 sm:dark:border-gray-800 sm:pl-6 overflow-hidden">
+            <p class="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-tighter sm:tracking-widest truncate">Net</p>
+            <p class="text-[10px] sm:text-base font-black tracking-tight truncate" :class="{
+                'text-emerald-500': color === 'green',
+                'text-rose-500': color === 'red',
+                'text-gray-900 dark:text-white': color === 'gray'
+            }">
+                {{ totalDay > 0 ? '+' : '' }}{{ currency(totalDay) }}
+            </p>
         </div>
+
     </div>
 </template>
 

@@ -139,7 +139,7 @@ const handleSubmit = async () => {
         class="reg-card bg-white dark:bg-gray-900/50 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
         <!-- Brand Header -->
-        <div class="p-10 pb-0 text-center">
+        <div class="p-6 sm:p-10 pb-0 text-center">
            <NuxtLink to="/" class="inline-flex items-center gap-3 mb-8 group">
               <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                 <UIcon name="i-heroicons-wallet" class="w-6 h-6 text-white" />
@@ -154,7 +154,7 @@ const handleSubmit = async () => {
             >Create account</Motion>
         </div>
 
-        <div class="p-10 space-y-8">
+        <div class="p-6 sm:p-10 space-y-6 sm:space-y-8">
            <Motion 
               :initial="{ opacity: 0, y: 10 }"
               :animate="{ opacity: 1, y: 0 }"
@@ -241,7 +241,7 @@ const handleSubmit = async () => {
            :initial="{ opacity: 0 }"
            :animate="{ opacity: 1 }"
            :transition="{ delay: 1.1 }"
-           class="p-10 pt-0 text-center"
+           class="p-6 sm:p-10 pt-0 text-center"
          >
            <p class="text-gray-500 dark:text-gray-400 font-bold">
               Already have an account? 

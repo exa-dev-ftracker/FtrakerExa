@@ -51,7 +51,7 @@ watch(() => route.path, () => updateIndicator())
 <template>
     <!-- Sticky Header -->
     <div class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/5">
-        <header class="w-full py-6 sm:py-8 px-6 sm:px-10 flex items-center justify-between gap-8">
+        <header class="w-full py-4 sm:py-8 px-3 sm:px-10 flex items-center justify-between gap-2 sm:gap-8">
             <!-- Logo -->
             <Motion 
                 :initial="{ opacity: 0, x: -20 }"
@@ -61,14 +61,14 @@ watch(() => route.path, () => updateIndicator())
             >
                 <NuxtLink 
                     to="/" 
-                    class="group flex items-center gap-3 shrink-0"
+                    class="group flex items-center gap-2 sm:gap-3 shrink-0"
                 >
-                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:rotate-12 transition-transform duration-500">
-                        <UIcon name="i-heroicons-bolt" class="w-7 h-7 text-white" />
+                    <div class="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:rotate-12 transition-transform duration-500">
+                        <UIcon name="i-heroicons-bolt" class="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                     </div>
                     <div class="flex flex-col -space-y-1">
-                        <span class="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">FTraker<span class="text-blue-600">.</span></span>
-                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600/60 dark:text-blue-400/40">Finances</span>
+                        <span class="text-xl sm:text-2xl font-black tracking-tighter text-gray-900 dark:text-white">FTraker<span class="text-blue-600">.</span></span>
+                        <span class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.3em] text-blue-600/60 dark:text-blue-400/40">Finances</span>
                     </div>
                 </NuxtLink>
             </Motion>
@@ -93,7 +93,7 @@ watch(() => route.path, () => updateIndicator())
             </nav>
 
             <!-- Actions -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                 <!-- Theme Toggle -->
                 <ClientOnly>
                     <UButton
@@ -101,36 +101,36 @@ watch(() => route.path, () => updateIndicator())
                         color="gray"
                         variant="ghost"
                         aria-label="Theme"
-                        class="rounded-xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5"
+                        class="rounded-lg sm:rounded-xl w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5"
                         @click="isDark = !isDark"
                     />
                 </ClientOnly>
 
                 <template v-if="store.isAuth">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3">
                         <NuxtLink to="/settings" class="hidden sm:block">
                             <UButton icon="i-heroicons-cog-8-tooth" color="gray" variant="ghost" class="rounded-xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5" />
                         </NuxtLink>
-                        <div class="h-11 w-11 rounded-2xl overflow-hidden ring-2 ring-gray-100 dark:ring-white/5 p-0.5 group cursor-pointer hover:ring-blue-500/30 transition-all">
-                            <UAvatar 
-                                :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${store.user?.name || 'Felix'}`" 
-                                :alt="store.user?.name || 'User'" 
-                                class="w-full h-full transform group-hover:scale-110 transition-transform" 
-                            />
+                        <div class="h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl overflow-hidden ring-2 ring-gray-100 dark:ring-white/5 p-0.5 group cursor-pointer hover:ring-blue-500/30 transition-all">
+                                <UAvatar 
+                                    :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${store.user?.name || 'Felix'}`" 
+                                    :alt="store.user?.name || 'User'" 
+                                    class="w-full h-full transform group-hover:scale-110 transition-transform" 
+                                />
+                            </div>
                         </div>
-                    </div>
-                </template>
-                
-                
-                <slot />
-            </div>
-        </header>
-    </div>
+                    </template>
+                    
+                    
+                    <slot />
+                </div>
+            </header>
+        </div>
 
         <!-- Mobile Bottom Navigation -->
-        <nav v-if="store.isAuth" class="lg:hidden fixed bottom-6 left-6 right-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-40 flex items-center justify-between px-6">
+        <nav v-if="store.isAuth" class="lg:hidden fixed bottom-4 sm:bottom-6 left-2 sm:left-4 right-2 sm:right-4 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-2xl z-40 flex items-center justify-between px-3 sm:px-6">
             <!-- Left Side Links -->
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-1 sm:gap-6 flex-1 justify-around">
                 <NuxtLink 
                     v-for="item in links.slice(0, 2)" 
                     :key="item.path" 
@@ -138,23 +138,23 @@ watch(() => route.path, () => updateIndicator())
                     class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
                     :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
                 >
-                    <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
+                    <UIcon :name="item.icon" class="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-active:scale-90" />
+                    <span class="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter sm:tracking-[0.2em]">{{ item.name }}</span>
                 </NuxtLink>
             </div>
 
             <!-- Central Add Button -->
-            <div class="relative -mt-12">
+            <div class="relative -mt-8 sm:-mt-12 shrink-0">
                 <button 
                     @click="store.toggleTransactionModal(true)"
-                    class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/40 border-4 border-white dark:border-gray-900 transform active:scale-90 transition-all duration-300"
+                    class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/40 border-4 border-white dark:border-gray-900 transform active:scale-90 transition-all duration-300"
                 >
-                    <UIcon name="i-heroicons-plus" class="w-8 h-8 text-white" />
+                    <UIcon name="i-heroicons-plus" class="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </button>
             </div>
 
             <!-- Right Side Links -->
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-1 sm:gap-6 flex-1 justify-around">
                 <NuxtLink 
                     v-for="item in links.slice(2)" 
                     :key="item.path" 
@@ -162,8 +162,8 @@ watch(() => route.path, () => updateIndicator())
                     class="flex flex-col items-center justify-center gap-1 group transition-all duration-300"
                     :class="route.path.startsWith(item.path) ? 'text-blue-600 scale-110' : 'text-gray-400'"
                 >
-                    <UIcon :name="item.icon" class="w-6 h-6 transition-transform group-active:scale-90" />
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em]">{{ item.name }}</span>
+                    <UIcon :name="item.icon" class="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-active:scale-90" />
+                    <span class="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter sm:tracking-[0.2em]">{{ item.name }}</span>
                 </NuxtLink>
             </div>
         </nav>
