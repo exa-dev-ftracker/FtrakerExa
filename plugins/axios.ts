@@ -110,7 +110,10 @@ export default defineNuxtPlugin((nuxtApp) => {
                 return api(originalRequest)
             } catch (err) {
                 if (import.meta.client) {
-                    navigateTo('/login')
+                    const currentPath = window.location.pathname
+                    if (currentPath !== '/' && !['/login', '/register'].includes(currentPath)) {
+                        navigateTo('/login')
+                    }
                 }
                 return Promise.reject(err)
             }
