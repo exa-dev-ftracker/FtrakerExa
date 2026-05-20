@@ -63,7 +63,7 @@ const action = [
                         </p>
                     </div>
 
-                    <UDropdown :items="action" :popper="{ placement: 'bottom-end' }">
+                    <UDropdown :items="action" :popper="{ placement: 'auto' }">
                         <UButton 
                             color="gray" 
                             variant="ghost" 
