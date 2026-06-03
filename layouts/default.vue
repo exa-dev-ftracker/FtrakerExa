@@ -40,7 +40,7 @@ await useAsyncData("user_me", async () => {
         currentPath !== "/" &&
         !["/login", "/register"].includes(currentPath)
       ) {
-        router.push("/login");
+        await navigateTo("/login");
       }
     }
   }

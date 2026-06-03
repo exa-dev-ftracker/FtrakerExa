@@ -16,7 +16,7 @@ const toast = useToast();
 // Check if user is authenticated
 const jwt = useCookie("jwt");
 if (!jwt.value) {
-  router.push("/login");
+  await navigateTo("/login");
 }
 
 const selectedView = ref<"Week" | "Month" | "Year">("Month");
