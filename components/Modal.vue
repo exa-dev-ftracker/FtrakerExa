@@ -83,7 +83,7 @@ const onSubmit = async () => {
         formData.type = "";
         formData.amount = 0;
         formattedAmount.value = "Rp 0";
-        isOpen.value = false;
+        store.toggleTransactionModal(false);
       } catch (error: any) {
         toast.add({
           title: "Error",
@@ -107,7 +107,7 @@ const onSubmit = async () => {
         formData.type = "";
         formData.amount = 0;
         formattedAmount.value = "Rp 0";
-        isOpen.value = false;
+        store.toggleTransactionModal(false);
       } catch (error: any) {
         console.error(error);
         toast.add({
@@ -144,9 +144,30 @@ watch(
       formData.amount = newValue.amount;
       formData._id = newValue._id;
       formattedAmount.value = currency(newValue.amount);
+    } else {
+      formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
+      formData.description = "";
+      formData.type = "";
+      formData.amount = 0;
+      formData._id = "";
+      formattedAmount.value = "Rp 0";
     }
   },
   { immediate: true, deep: true },
+);
+
+watch(
+  () => props.isModalOpen,
+  (newValue) => {
+    if (!newValue) {
+      formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
+      formData.description = "";
+      formData.type = "";
+      formData.amount = 0;
+      formData._id = "";
+      formattedAmount.value = "Rp 0";
+    }
+  },
 );
 </script>
 
