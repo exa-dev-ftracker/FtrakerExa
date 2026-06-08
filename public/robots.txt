@@ -1,1 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /transactions/
+Disallow: /api/
 
+Sitemap: https://ftraker.app/sitemap.xml
