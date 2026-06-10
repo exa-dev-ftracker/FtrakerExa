@@ -23,6 +23,11 @@ const haveError = ref(false);
 const isLoading = ref(false);
 const isLoadingGoogle = ref(false);
 const isPasswordMode = ref(true);
+const accessToken = useCookie("jwt");
+
+if (accessToken.value) {
+  router.push("/dashboard");
+}
 
 const error = reactive<{
   name?: string;

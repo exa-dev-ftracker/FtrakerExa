@@ -22,6 +22,11 @@ const store = useDefaultStore();
 const isLoading = ref(false);
 const error = ref(false);
 const errorMessage = ref("");
+const accessToken = useCookie("jwt");
+
+if (accessToken.value) {
+  router.push("/dashboard");
+}
 
 const formData = reactive({
   email: "",
