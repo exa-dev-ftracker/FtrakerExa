@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Transaction } from "~/types";
+import type { Category, Transaction } from "~/types";
 import { displayTransactionType } from "~/types";
 
 const toast = useToast();
@@ -15,6 +15,12 @@ const colorClass = computed(() =>
     ? "text-emerald-500 bg-emerald-500/10"
     : "text-rose-500 bg-rose-500/10",
 );
+
+const categoryData = computed<Category>(() => {
+  const c = props.data?.category;
+  if (typeof c === "object") return c as Category;
+  return { _id: "", name: "Unknown", color: "#6b7280", icon: "i-heroicons-tag", user: "", type: null, createdAt: "", updatedAt: "" };
+});
 
 const action = [
   [
@@ -79,11 +85,18 @@ const action = [
             >
               {{ props.data.description }}
             </h4>
-            <div class="flex items-center gap-3 mt-1.5">
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
               <span
                 class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500"
                 >{{ displayTransactionType(props.data.type) }}</span
               >
+              <span
+                class="text-[10px] font-black px-2 py-0.5 rounded-md inline-flex items-center gap-1"
+                :style="{ backgroundColor: categoryData.color + '20', color: categoryData.color }"
+              >
+                <UIcon :name="categoryData.icon" class="w-3 h-3" />
+                {{ categoryData.name }}
+              </span>
             </div>
           </div>
         </div>

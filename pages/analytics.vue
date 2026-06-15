@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Transaction, TransactionResponse } from "~/types";
+import type { Category, Transaction, TransactionResponse } from "~/types";
 
 useHead({
   title: "FTraker - Analytics",
@@ -27,12 +27,20 @@ const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
 );
 const loading = computed(() => status.value !== "success");
 
+const getCategoryName = (t: Transaction): string => {
+  if (typeof t.category === "object") return (t.category as Category).name;
+  return "Unknown";
+};
+
 // Calculations
 const incomeByCategory = computed(() => {
   const map: Record<string, number> = {};
   (data.value?.body?.current || [])
     .filter(t => t.type.toLowerCase() === "income")
-    .forEach(t => map[t.description] = (map[t.description] || 0) + t.amount);
+    .forEach(t => {
+      const name = getCategoryName(t);
+      map[name] = (map[name] || 0) + t.amount;
+    });
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
 });
 
@@ -40,7 +48,10 @@ const expenseByCategory = computed(() => {
   const map: Record<string, number> = {};
   (data.value?.body?.current || [])
     .filter(t => ["expense", "expanse"].includes(t.type.toLowerCase()))
-    .forEach(t => map[t.description] = (map[t.description] || 0) + t.amount);
+    .forEach(t => {
+      const name = getCategoryName(t);
+      map[name] = (map[name] || 0) + t.amount;
+    });
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
 });
 

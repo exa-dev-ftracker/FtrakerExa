@@ -3,6 +3,7 @@ import users, {type User} from "~/server/model/users";
 import Token from "~/server/model/token";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
+import seedCategories from "~/server/utils/seedCategories";
 
 interface Decoded {
     email: string;
@@ -78,7 +79,8 @@ export default defineEventHandler(async (event) => {
             });
             
             const savedUser = await newUser.save();
-            
+            await seedCategories(savedUser._id.toString());
+
             const token = jwt.sign(
                 {email, name: savedUser.name, id: savedUser._id},
                 runTimeConfig.secretJwtKey,

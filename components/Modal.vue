@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { z } from "zod";
-import type { Transaction } from "~/types";
+import type { Category, Transaction } from "~/types";
 
 interface InputEvent extends Event {
   target: HTMLInputElement & {
@@ -27,6 +27,7 @@ const schema = z.object({
       message: "Type must be Income or Expense",
     }),
   amount: z.number().min(1000, "Amount must be at least Rp 1000"),
+  category: z.string().min(1, "Category is required"),
 });
 
 const isOpen = computed({
@@ -41,48 +42,44 @@ const formData = reactive({
   description: "",
   type: "",
   amount: 0,
+  category: "",
   _id: "",
 });
 
 const formattedAmount = ref("Rp 0");
 
-// Fungsi yang dipanggil setiap input berubah
 const onInput = (event: InputEvent) => {
-  // Hapus semua karakter non-digit
-
   const value = event.target.value.replace(/[^\d]/g, "");
-
-  // Simpan nilai asli (tanpa format Rupiah)
   formData.amount = parseInt(value) || 0;
-
-  // Format input menjadi Rupiah
   formattedAmount.value = currency(formData.amount);
 };
 
+const filteredCategories = computed(() => {
+  const type = formData.type.toLowerCase();
+  if (!type) return store.categories;
+  return store.categories.filter(
+    (c) => !c.type || c.type === type || (type === "expanse" && c.type === "expense")
+  );
+});
+
 const isLoading = ref(false);
 const onSubmit = async () => {
-  // Validasi form
   if (isLoading.value) return;
   isLoading.value = true;
 
   try {
     await schema.parseAsync(formData);
-    // Kirim data ke server
+    const payload = { ...formData };
     if (props.isEdit && props.data) {
-      formData._id = props.data?._id;
+      payload._id = props.data._id;
       try {
-        await (useNuxtApp().$axios as any).put("/api/transaction", formData);
-        // Tutup modal
+        await (useNuxtApp().$axios as any).put("/api/transaction", payload);
         toast.add({
           title: "Success",
           description: "Transaction saved successfully",
         });
         emit("submit");
-        formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
-        formData.description = "";
-        formData.type = "";
-        formData.amount = 0;
-        formattedAmount.value = "Rp 0";
+        resetForm();
         store.toggleTransactionModal(false);
       } catch (error: any) {
         toast.add({
@@ -95,18 +92,13 @@ const onSubmit = async () => {
       }
     } else {
       try {
-        await (useNuxtApp().$axios as any).post("/api/transaction", formData);
-        // Tutup modal
+        await (useNuxtApp().$axios as any).post("/api/transaction", payload);
         toast.add({
           title: "Success",
           description: "Transaction saved successfully",
         });
         emit("submit");
-        formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
-        formData.description = "";
-        formData.type = "";
-        formData.amount = 0;
-        formattedAmount.value = "Rp 0";
+        resetForm();
         store.toggleTransactionModal(false);
       } catch (error: any) {
         console.error(error);
@@ -125,14 +117,23 @@ const onSubmit = async () => {
   }
 };
 
+const resetForm = () => {
+  formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
+  formData.description = "";
+  formData.type = "";
+  formData.amount = 0;
+  const general = store.categories.find(c => c.name === "General");
+  formData.category = general?._id || "";
+  formData._id = "";
+  formattedAmount.value = "Rp 0";
+};
+
 watch(
   () => props.data,
   (newValue) => {
     if (newValue) {
       formData.createdAt = newValue.createdAt.split("T")[0];
       formData.description = newValue.description;
-
-      // Normalisasi tipe ke format Capitalize yang tepat
       let parsedType =
         newValue.type.charAt(0).toUpperCase() +
         newValue.type.slice(1).toLowerCase();
@@ -140,17 +141,15 @@ watch(
         parsedType = "Expense";
       }
       formData.type = parsedType;
-
       formData.amount = newValue.amount;
       formData._id = newValue._id;
+      formData.category =
+        typeof newValue.category === "object" && newValue.category
+          ? (newValue.category as Category)._id
+          : (newValue.category as string) || "";
       formattedAmount.value = currency(newValue.amount);
     } else {
-      formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
-      formData.description = "";
-      formData.type = "";
-      formData.amount = 0;
-      formData._id = "";
-      formattedAmount.value = "Rp 0";
+      resetForm();
     }
   },
   { immediate: true, deep: true },
@@ -159,13 +158,11 @@ watch(
 watch(
   () => props.isModalOpen,
   (newValue) => {
+    if (newValue && store.categories.length === 0) {
+      store.fetchCategories();
+    }
     if (!newValue) {
-      formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
-      formData.description = "";
-      formData.type = "";
-      formData.amount = 0;
-      formData._id = "";
-      formattedAmount.value = "Rp 0";
+      resetForm();
     }
   },
 );
@@ -250,6 +247,16 @@ watch(
               name="description"
               v-model="formData.description"
               placeholder="e.g., Coffee, Salary, etc."
+            />
+          </UFormGroup>
+
+          <UFormGroup eager-validation name="category" label="🏷️ Category" required>
+            <USelect
+              name="category"
+              v-model="formData.category"
+              placeholder="Select a category"
+              :options="filteredCategories.map(c => ({ value: c._id, label: c.name }))"
+              :ui="{ rounded: 'rounded-xl' }"
             />
           </UFormGroup>
 

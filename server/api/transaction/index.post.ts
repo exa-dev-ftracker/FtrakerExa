@@ -40,21 +40,23 @@ export default defineEventHandler(async (events) => {
             type: string;
             description: string;
             createdAt?: string;
+            category?: string;
         }>(events);
-        if (!body) {
+        if (!body || !body.category) {
             setResponseStatus(events, 400);
             return {
                 statusCode: 400,
-                body: {message: "Bad request"},
+                body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt} = body;
+        const {amount, type, description, createdAt, category} = body;
         const transaction = new transactions({
             user: userData.id,
             amount,
             type,
             description,
             createdAt,
+            category: category || undefined,
         });
         await transaction.save();
         setResponseStatus(events, 201);

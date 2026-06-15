@@ -15,11 +15,16 @@ const store = useDefaultStore();
 const isLoading = ref(false);
 const selectedView = ref(transactionViewOptions[2]);
 const isHydrated = ref(false);
+const filterCategory = ref("all");
 
 const { $axios } = useNuxtApp();
 const { data, status, refresh } = useAsyncData<TransactionResponse>("transactionsUser", async () => {
     try {
-      const res = await ($axios as any).get(`/api/transaction?view=${selectedView.value}`);
+      const params = new URLSearchParams({ view: selectedView.value });
+      if (filterCategory.value && filterCategory.value !== "all") {
+        params.append("category", filterCategory.value);
+      }
+      const res = await ($axios as any).get(`/api/transaction?${params.toString()}`);
       return res.data || res;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to fetch transactions");
@@ -28,6 +33,9 @@ const { data, status, refresh } = useAsyncData<TransactionResponse>("transaction
 
 onMounted(() => {
   isHydrated.value = true;
+  if (store.categories.length === 0) {
+    store.fetchCategories();
+  }
 });
 
 const loading = computed(() => status.value !== "success");
@@ -90,6 +98,7 @@ const handleEdit = (date: string, _id: string) => {
 
 watch(selectedView, () => refresh());
 watch(() => store.refreshTrigger, () => refresh());
+watch(filterCategory, () => refresh());
 </script>
 
 <template>
@@ -156,7 +165,7 @@ watch(() => store.refreshTrigger, () => refresh());
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div class="md:col-span-6">
+          <div class="md:col-span-4">
             <UInput 
               v-model="searchQuery" 
               icon="i-heroicons-magnifying-glass" 
@@ -166,10 +175,19 @@ watch(() => store.refreshTrigger, () => refresh());
               :ui="{ rounded: 'rounded-2xl', base: 'bg-white dark:bg-gray-900 border-gray-200 dark:border-white/5' }"
             />
           </div>
-          <div class="md:col-span-3">
+          <div class="md:col-span-2">
             <USelect 
               v-model="filterType" 
               :options="['All', 'Income', 'Expense']" 
+              size="xl"
+              class="w-full"
+              :ui="{ rounded: 'rounded-2xl' }"
+            />
+          </div>
+          <div class="md:col-span-3">
+            <USelect 
+              v-model="filterCategory" 
+              :options="[{ value: 'all', label: 'All Categories' }, ...store.categories.map(c => ({ value: c._id, label: c.name }))]" 
               size="xl"
               class="w-full"
               :ui="{ rounded: 'rounded-2xl' }"

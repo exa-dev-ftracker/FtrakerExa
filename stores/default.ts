@@ -1,4 +1,4 @@
-import type { Transaction } from "~/types";
+import type { Category, Transaction } from "~/types";
 
 export const useDefaultStore = defineStore("default", {
   state: () => {
@@ -9,6 +9,7 @@ export const useDefaultStore = defineStore("default", {
       isTransactionModalOpen: false,
       transactionToEdit: null as Transaction | null,
       refreshTrigger: 0,
+      categories: [] as Category[],
     };
   },
   actions: {
@@ -23,6 +24,7 @@ export const useDefaultStore = defineStore("default", {
       this.isAuth = false;
       this.user = null;
       this.jwt = "";
+      this.categories = [];
     },
     toggleTransactionModal(value: boolean) {
       this.isTransactionModalOpen = value;
@@ -36,6 +38,15 @@ export const useDefaultStore = defineStore("default", {
     },
     triggerRefresh() {
       this.refreshTrigger++;
-    }
+    },
+    async fetchCategories() {
+      try {
+        const { $axios } = useNuxtApp();
+        const res = await ($axios as any).get("/api/category");
+        this.categories = res.data?.body || res.body || [];
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    },
   },
 });

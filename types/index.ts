@@ -4,6 +4,17 @@ export type dataUserRedis = {
     email: string;
 }
 
+export interface Category {
+    _id: string
+    user: string
+    name: string
+    type: 'income' | 'expense' | null
+    color: string
+    icon: string
+    createdAt: string
+    updatedAt: string
+}
+
 export interface Transaction {
     type: string
     amount: number
@@ -11,6 +22,7 @@ export interface Transaction {
     createdAt: string
     _id: string
     updatedAt: string
+    category?: Category | string | null
 }
 
 export interface TransactionResponse {

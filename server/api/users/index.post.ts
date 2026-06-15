@@ -1,5 +1,6 @@
 import Users, { type User } from "~/server/model/users";
 import bcrypt from "bcrypt";
+import seedCategories from "~/server/utils/seedCategories";
 
 export default defineEventHandler(async (events) => {
   try {
@@ -12,6 +13,7 @@ export default defineEventHandler(async (events) => {
     const hashPassword = bcrypt.hashSync(password, 10);
     const user = new Users({ email, password: hashPassword, name });
     await user.save();
+    await seedCategories(user._id.toString());
     setResponseStatus(events, 201);
     return {
       statusCode: 201,

@@ -36,16 +36,17 @@ export default defineEventHandler(async (events) => {
             type: string;
             description: string;
             createdAt?: string;
+            category?: string;
             _id: string;
         }>(events);
-        if (!body) {
+        if (!body || !body.category) {
             setResponseStatus(events, 400);
             return {
                 statusCode: 400,
-                body: {message: "Bad request"},
+                body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt, _id} = body;
+        const {amount, type, description, createdAt, category, _id} = body;
         const transaction = await transactions.findOne({_id});
         if (!transaction) {
             setResponseStatus(events, 404);
@@ -64,10 +65,11 @@ export default defineEventHandler(async (events) => {
         transaction.amount = amount;
         transaction.type = type;
         transaction.description = description;
+        transaction.category = category || undefined;
         transaction.createdAt = createdAt
             ? new Date(createdAt)
             : transaction.createdAt;
-        await transaction.save(); // Update the user's balance based on the transaction type
+        await transaction.save();
         setResponseStatus(events, 200);
         return {
             statusCode: 200,

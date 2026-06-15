@@ -27,7 +27,7 @@ export default defineEventHandler(async (events) => {
                 message: "Unauthorized: Invalid token",
             }
         }
-        const {view} = getQuery(events) as { view: string };
+        const {view, category} = getQuery(events) as { view: string; category?: string };
         const {lastPeriode, currentPeriode} = selectedViewPeriode(view);
         const user = await useNitroApp().redis.get(token);
         if (!user) {
@@ -38,10 +38,18 @@ export default defineEventHandler(async (events) => {
             }
         }
         const dataUser: dataUserRedis = JSON.parse(user);
+        const baseQuery: Record<string, any> = { user: dataUser.id };
+        if (category && category !== "all") {
+            baseQuery.category = category;
+        } else if (category === "none") {
+            baseQuery.category = { $exists: false };
+        }
+        const sortQuery = { createdAt: -1 };
         if (view === "All") {
             const all = await transactions
-                .find({user: dataUser.id})
-                .sort({createdAt: -1});
+                .find(baseQuery)
+                .sort(sortQuery)
+                .populate("category");
             setResponseStatus(events, 200);
             return {
                 statusCode: 200,
@@ -52,16 +60,17 @@ export default defineEventHandler(async (events) => {
             };
         }
         const current = await transactions
-            .find({user: dataUser.id})
-            .sort({createdAt: -1})
+            .find({ ...baseQuery })
+            .sort(sortQuery)
             .gte("createdAt", currentPeriode().start)
             .lte("createdAt", currentPeriode().end)
-            .gte("createdAt", currentPeriode().start);
+            .populate("category");
         const last = await transactions
-            .find({user: dataUser.id})
-            .sort({createdAt: -1})
+            .find({ ...baseQuery })
+            .sort(sortQuery)
             .gte("createdAt", lastPeriode().start)
-            .lte("createdAt", lastPeriode().end);
+            .lte("createdAt", lastPeriode().end)
+            .populate("category");
         setResponseStatus(events, 200);
         return {
             statusCode: 200,

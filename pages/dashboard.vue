@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Transaction, TransactionResponse } from "~/types";
+import type { Category, Transaction, TransactionResponse } from "~/types";
 
 useHead({
   title: "FTraker - Dashboard",
@@ -87,6 +87,11 @@ const recentTransactions = computed(() => {
     .slice(0, 8); // Show more on refactored dashboard
 });
 
+const getCategoryName = (t: Transaction): string => {
+  if (typeof t.category === "object") return (t.category as Category).name;
+  return "General";
+};
+
 const topExpenses = computed(() => {
   const map: Record<string, number> = {};
   const expenses = (data.value?.body?.current || []).filter(
@@ -96,7 +101,8 @@ const topExpenses = computed(() => {
     },
   );
   expenses.forEach((t: Transaction) => {
-    map[t.description] = (map[t.description] || 0) + t.amount;
+    const name = getCategoryName(t);
+    map[name] = (map[name] || 0) + t.amount;
   });
   return Object.entries(map)
     .sort((a, b) => b[1] - a[1])
