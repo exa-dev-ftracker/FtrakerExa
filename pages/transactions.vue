@@ -52,7 +52,7 @@ const transactionByDate = computed(() => {
   if (filterType.value !== "All") {
     filtered = filtered.filter((t) => {
       if (filterType.value === "Income") return t.type.toLowerCase() === "income";
-      if (filterType.value === "Expense") return t.type.toLowerCase() === "expense" || t.type.toLowerCase() === "expanse";
+      if (filterType.value === "Expense") return t.type.toLowerCase() === "expense";
       return true;
     });
   }

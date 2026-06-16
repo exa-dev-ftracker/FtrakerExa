@@ -47,7 +47,7 @@ const incomeByCategory = computed(() => {
 const expenseByCategory = computed(() => {
   const map: Record<string, number> = {};
   (data.value?.body?.current || [])
-    .filter(t => ["expense", "expanse"].includes(t.type.toLowerCase()))
+    .filter(t => t.type.toLowerCase() === "expense")
     .forEach(t => {
       const name = getCategoryName(t);
       map[name] = (map[name] || 0) + t.amount;
@@ -56,7 +56,7 @@ const expenseByCategory = computed(() => {
 });
 
 const incomeTotal = computed(() => (data.value?.body?.current || []).reduce((s, t) => t.type.toLowerCase() === "income" ? s + t.amount : s, 0));
-const expenseTotal = computed(() => (data.value?.body?.current || []).reduce((s, t) => ["expense", "expanse"].includes(t.type.toLowerCase()) ? s + t.amount : s, 0));
+const expenseTotal = computed(() => (data.value?.body?.current || []).reduce((s, t) => t.type.toLowerCase() === "expense" ? s + t.amount : s, 0));
 const transactionCount = computed(() => (data.value?.body?.current || []).length);
 const averageTransaction = computed(() => transactionCount.value > 0 ? (incomeTotal.value + expenseTotal.value) / transactionCount.value : 0);
 const largestTransaction = computed(() => {

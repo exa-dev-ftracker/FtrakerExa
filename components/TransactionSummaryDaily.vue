@@ -39,7 +39,7 @@ const expenseTotal = computed((): number => {
     let total = 0
     for (let transaction of props.transaction) {
         const type = transaction.type.toLowerCase()
-        if (type === 'expense' || type === 'expanse') {
+        if (type === 'expense') {
             total += transaction.amount
         }
     }

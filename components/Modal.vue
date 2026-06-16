@@ -23,7 +23,7 @@ const schema = z.object({
   description: z.string().min(3, "Description must be at least 3 characters"),
   type: z
     .string()
-    .refine((val) => ["Income", "Expense", "Expanse"].includes(val), {
+    .refine((val) => ["Income", "Expense"].includes(val), {
       message: "Type must be Income or Expense",
     }),
   amount: z.number().min(1000, "Amount must be at least Rp 1000"),
@@ -58,7 +58,7 @@ const filteredCategories = computed(() => {
   const type = formData.type.toLowerCase();
   if (!type) return store.categories;
   return store.categories.filter(
-    (c) => !c.type || c.type === type || (type === "expanse" && c.type === "expense")
+    (c) => !c.type || c.type === type
   );
 });
 
@@ -137,9 +137,6 @@ watch(
       let parsedType =
         newValue.type.charAt(0).toUpperCase() +
         newValue.type.slice(1).toLowerCase();
-      if (parsedType === "Expanse") {
-        parsedType = "Expense";
-      }
       formData.type = parsedType;
       formData.amount = newValue.amount;
       formData._id = newValue._id;

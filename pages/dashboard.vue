@@ -67,7 +67,7 @@ const expenseTotal = computed(() => {
   return (data.value?.body?.current || []).reduce(
     (sum: number, t: Transaction) => {
       const type = t.type.toLowerCase();
-      return type === "expense" || type === "expanse" ? sum + t.amount : sum;
+      return type === "expense" ? sum + t.amount : sum;
     },
     0,
   );
@@ -97,7 +97,7 @@ const topExpenses = computed(() => {
   const expenses = (data.value?.body?.current || []).filter(
     (t: Transaction) => {
       const type = t.type.toLowerCase();
-      return type === "expense" || type === "expanse";
+      return type === "expense";
     },
   );
   expenses.forEach((t: Transaction) => {
