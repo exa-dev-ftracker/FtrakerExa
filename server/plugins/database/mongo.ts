@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import logger from "~/server/utils/logger";
 
+// Register all models at startup to prevent "Schema hasn't been registered" errors
+import "~/server/model/users";
+import "~/server/model/category";
+import "~/server/model/transactions";
+import "~/server/model/token";
+import "~/server/model/resetToken";
+
 const runtimeConfig = useRuntimeConfig();
 
 // Retry configuration
