@@ -2,6 +2,7 @@ import Category from "~/server/model/category";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type { dataUserRedis } from "~/types";
+import { broadcastToUser } from "~/server/utils/wsPeerManager";
 
 export default defineEventHandler(async (events) => {
   try {
@@ -34,6 +35,7 @@ export default defineEventHandler(async (events) => {
     if (body.color !== undefined) category.color = body.color;
     if (body.icon !== undefined) category.icon = body.icon;
     await category.save();
+    broadcastToUser(dataUser.id, "category:changed", { action: "updated" });
     setResponseStatus(events, 200);
     return { statusCode: 200, body: category };
   } catch (error) {

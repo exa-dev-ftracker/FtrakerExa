@@ -3,6 +3,7 @@ import transactions from "~/server/model/transactions";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type { dataUserRedis } from "~/types";
+import { broadcastToUser } from "~/server/utils/wsPeerManager";
 
 export default defineEventHandler(async (events) => {
   try {
@@ -35,6 +36,7 @@ export default defineEventHandler(async (events) => {
       { $unset: { category: "" } }
     );
     await Category.deleteOne({ _id: body._id });
+    broadcastToUser(dataUser.id, "category:changed", { action: "deleted" });
     setResponseStatus(events, 200);
     return { statusCode: 200, body: { message: "Category deleted" } };
   } catch (error) {

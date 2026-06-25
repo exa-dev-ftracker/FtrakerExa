@@ -4,6 +4,9 @@ const router = useRouter();
 const cookie = ref<string | null>("");
 const { $axios } = useNuxtApp();
 
+const ws = useWebSocket();
+useVisibilityRefresh();
+
 const { data: jwtVal } = await useAsyncData("jwt", async () => {
   const jwt = useCookie("jwt");
   return jwt.value || store.jwt || null;
@@ -54,6 +57,7 @@ const handleLogout = async () => {
     });
     const data = res.data || res;
     if (data.statusCode === 200) {
+      ws.disconnect();
       store.logout();
       return router.push("/login");
     }
@@ -61,6 +65,23 @@ const handleLogout = async () => {
     console.error(err);
   }
 };
+
+onMounted(() => {
+  if (store.isAuth) {
+    ws.connect();
+  }
+});
+
+watch(
+  () => store.isAuth,
+  (auth) => {
+    if (auth) {
+      ws.connect();
+    } else {
+      ws.disconnect();
+    }
+  }
+);
 </script>
 
 <template>

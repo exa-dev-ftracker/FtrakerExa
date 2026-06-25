@@ -2,6 +2,7 @@ import transactions from "~/server/model/transactions";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type {dataUserRedis} from "~/types";
+import { broadcastToUser } from "~/server/utils/wsPeerManager";
 
 export default defineEventHandler(async (events) => {
     try {
@@ -59,6 +60,7 @@ export default defineEventHandler(async (events) => {
             category: category || undefined,
         });
         await transaction.save();
+        broadcastToUser(userData.id, "transaction:created", { _id: transaction._id });
         setResponseStatus(events, 201);
         return {
             statusCode: 201,

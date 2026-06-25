@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import Transactions from "~/server/model/transactions";
 import logger from "~/server/utils/logger";
 import type {dataUserRedis} from "~/types";
+import { broadcastToUser } from "~/server/utils/wsPeerManager";
 
 export default defineEventHandler(async (events) => {
     try {
@@ -44,6 +45,7 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Not Found"},
             };
         }
+        broadcastToUser(userData.id, "transaction:deleted", { id });
         setResponseStatus(events, 200);
         return {
             statusCode: 200,

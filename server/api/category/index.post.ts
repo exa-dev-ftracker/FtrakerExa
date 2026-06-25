@@ -2,6 +2,7 @@ import Category from "~/server/model/category";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type { dataUserRedis } from "~/types";
+import { broadcastToUser } from "~/server/utils/wsPeerManager";
 
 export default defineEventHandler(async (events) => {
   try {
@@ -37,6 +38,7 @@ export default defineEventHandler(async (events) => {
       icon: body.icon || "i-heroicons-tag",
     });
     await category.save();
+    broadcastToUser(dataUser.id, "category:changed", { action: "created" });
     setResponseStatus(events, 201);
     return { statusCode: 201, body: category };
   } catch (error) {
