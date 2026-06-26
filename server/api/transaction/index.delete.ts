@@ -45,7 +45,7 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Not Found"},
             };
         }
-        broadcastToUser(userData.id, "transaction:deleted", { id });
+        broadcastToUser(userData.id, "transaction:deleted", { id, _senderClientId: getHeader(events, "x-client-id") || "" });
         setResponseStatus(events, 200);
         return {
             statusCode: 200,

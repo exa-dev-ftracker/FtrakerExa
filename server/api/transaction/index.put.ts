@@ -71,7 +71,7 @@ export default defineEventHandler(async (events) => {
             ? new Date(createdAt)
             : transaction.createdAt;
         await transaction.save();
-        broadcastToUser(userData.id, "transaction:updated", { _id });
+        broadcastToUser(userData.id, "transaction:updated", { _id, _senderClientId: getHeader(events, "x-client-id") || "" });
         setResponseStatus(events, 200);
         return {
             statusCode: 200,

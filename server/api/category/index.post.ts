@@ -38,7 +38,7 @@ export default defineEventHandler(async (events) => {
       icon: body.icon || "i-heroicons-tag",
     });
     await category.save();
-    broadcastToUser(dataUser.id, "category:changed", { action: "created" });
+    broadcastToUser(dataUser.id, "category:changed", { action: "created", _senderClientId: getHeader(events, "x-client-id") || "" });
     setResponseStatus(events, 201);
     return { statusCode: 201, body: category };
   } catch (error) {

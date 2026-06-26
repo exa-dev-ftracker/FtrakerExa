@@ -1,9 +1,12 @@
+import { getClientId } from "~/composables/useClientId";
+
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_DELAY = 30000;
 
 export const useWebSocket = () => {
   const store = useDefaultStore();
   const toast = useToast();
+  const clientId = getClientId();
 
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -36,7 +39,7 @@ export const useWebSocket = () => {
         const msg = JSON.parse(event.data);
         if (msg.event && msg.event !== "error") {
           store.triggerRefresh();
-          if (msg.event !== "pong") {
+          if (msg.event !== "pong" && msg.data?._senderClientId !== clientId) {
             const label = msg.event.replace(/[:.]/g, " ");
             toast.add({
               title: "Updated",

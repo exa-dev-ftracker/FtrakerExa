@@ -60,7 +60,7 @@ export default defineEventHandler(async (events) => {
             category: category || undefined,
         });
         await transaction.save();
-        broadcastToUser(userData.id, "transaction:created", { _id: transaction._id });
+        broadcastToUser(userData.id, "transaction:created", { _id: transaction._id, _senderClientId: getHeader(events, "x-client-id") || "" });
         setResponseStatus(events, 201);
         return {
             statusCode: 201,

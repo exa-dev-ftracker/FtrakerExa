@@ -36,7 +36,7 @@ export default defineEventHandler(async (events) => {
       { $unset: { category: "" } }
     );
     await Category.deleteOne({ _id: body._id });
-    broadcastToUser(dataUser.id, "category:changed", { action: "deleted" });
+    broadcastToUser(dataUser.id, "category:changed", { action: "deleted", _senderClientId: getHeader(events, "x-client-id") || "" });
     setResponseStatus(events, 200);
     return { statusCode: 200, body: { message: "Category deleted" } };
   } catch (error) {

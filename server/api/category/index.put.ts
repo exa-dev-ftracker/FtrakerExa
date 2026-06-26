@@ -35,7 +35,7 @@ export default defineEventHandler(async (events) => {
     if (body.color !== undefined) category.color = body.color;
     if (body.icon !== undefined) category.icon = body.icon;
     await category.save();
-    broadcastToUser(dataUser.id, "category:changed", { action: "updated" });
+    broadcastToUser(dataUser.id, "category:changed", { action: "updated", _senderClientId: getHeader(events, "x-client-id") || "" });
     setResponseStatus(events, 200);
     return { statusCode: 200, body: category };
   } catch (error) {
