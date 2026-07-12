@@ -15,6 +15,11 @@ definePageMeta({
 });
 
 const store = useDefaultStore();
+
+const jwt = useCookie("jwt");
+if (jwt.value) {
+  await navigateTo("/dashboard");
+}
 </script>
 
 <template>

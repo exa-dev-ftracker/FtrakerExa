@@ -1,6 +1,30 @@
 <script setup lang="ts">
 const store = useDefaultStore();
 const route = useRoute();
+const router = useRouter();
+const isLoading = ref(true);
+
+const jwt = useCookie("jwt");
+if (jwt.value) {
+  store.login(jwt.value);
+}
+
+onMounted(async () => {
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone ||
+    document.referrer.includes("android-app://");
+
+  if (isStandalone && route.path === "/") {
+    if (store.isAuth) {
+      await router.push("/dashboard");
+    } else {
+      await router.push("/login");
+    }
+  }
+
+  isLoading.value = false;
+});
 
 useSeoMeta({
   title: "FTraker - Finance Tracker",
@@ -56,27 +80,11 @@ useHead({
     },
   ],
 });
-
-onMounted(() => {
-  // Check if mobile or running as PWA (standalone)
-  // const isMobile = window.innerWidth <= 768;
-  const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone ||
-    document.referrer.includes("android-app://");
-
-  if (isStandalone && route.path === "/") {
-    if (store.isAuth) {
-      navigateTo("/dashboard");
-    } else {
-      navigateTo("/login");
-    }
-  }
-});
 </script>
 
 <template>
-  <NuxtLayout>
+  <LoadingScreen v-if="isLoading" />
+  <NuxtLayout v-else>
     <NuxtPage />
   </NuxtLayout>
 </template>
