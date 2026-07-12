@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 import logger from "~/server/utils/logger";
 
 // Register all models at startup to prevent "Schema hasn't been registered" errors
-import "~/server/model/users";
-import "~/server/model/category";
-import "~/server/model/transactions";
-import "~/server/model/token";
-import "~/server/model/resetToken";
+import Users from "~/server/model/users";
+import Transactions from "~/server/model/transactions";
+import Category from "~/server/model/category";
+import Token from "~/server/model/token";
+import ResetToken from "~/server/model/resetToken";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -25,7 +25,10 @@ async function connectToMongoDB(attempt = 0): Promise<void> {
             serverSelectionTimeoutMS: 10000,
             socketTimeoutMS: 45000,
         });
-        logger.info("MongoDB connection established successfully");
+        // Verify all mongoose models are registered
+        const registeredModels = Object.keys(mongoose.models).join(", ");
+        logger.info(`MongoDB connection established successfully`);
+        logger.info(`Mongoose models registered: ${registeredModels}`);
     } catch (error) {
         if (attempt < MAX_RETRIES) {
             const delay = Math.min(INITIAL_DELAY * Math.pow(2, attempt), MAX_DELAY);

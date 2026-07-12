@@ -1,8 +1,12 @@
 import transactions from "~/server/model/transactions";
+import Category from "~/server/model/category";
 import selectedViewPeriode from "~/server/utils/selectedViewPeriode";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type {dataUserRedis} from "~/types";
+
+// Ensure Category model is registered for populate
+const _registerCategory = Category;
 
 export default defineEventHandler(async (events) => {
     try {
