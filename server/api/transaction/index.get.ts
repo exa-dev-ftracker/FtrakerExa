@@ -1,5 +1,4 @@
 import transactions from "~/server/model/transactions";
-import "~/server/model/category";
 import selectedViewPeriode from "~/server/utils/selectedViewPeriode";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";

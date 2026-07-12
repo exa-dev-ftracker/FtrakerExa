@@ -1,4 +1,5 @@
 import { Schema, model, Document } from "mongoose";
+import "~/server/model/category";
 
 export interface Transaction extends Document {
   user: Schema.Types.ObjectId;
