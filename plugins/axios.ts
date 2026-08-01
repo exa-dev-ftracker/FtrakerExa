@@ -11,7 +11,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const tokenCookie = useCookie("jwt", {
     maxAge: 86400, // 1 day
     path: "/",
-    sameSite: "lax",
+    sameSite: "strict",
     secure: import.meta.env.PROD,
   });
 
@@ -73,7 +73,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (
         error.response?.status !== 401 ||
         originalRequest?._retry ||
-        originalRequest?.url?.includes("/api/users/refresh")
+        originalRequest?.url?.includes("/api/auth/refresh")
       ) {
         return Promise.reject(error);
       }

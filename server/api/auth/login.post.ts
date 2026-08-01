@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
                 const refreshToken = jwt.sign(
                     {id: user._id, type: 'refresh'},
                     runtimeConfig.secretJwtKey,
-                    {algorithm: "HS384"}
+                    {algorithm: "HS384", expiresIn: '7d'}
                 );
                 const dataUser = {
                     email: user.email,

@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
                 runTimeConfig.secretJwtKey,
                 {algorithm: "HS384"}
             );
-            const refreshToken = jwt.sign({ id: emailIsUser._id, type: 'refresh' }, runTimeConfig.secretJwtKey, { algorithm: 'HS384' });
+            const refreshToken = jwt.sign({ id: emailIsUser._id, type: 'refresh' }, runTimeConfig.secretJwtKey, { algorithm: 'HS384', expiresIn: '7d' });
             const dataUser = {
                 email: emailIsUser.email,
                 name: emailIsUser.name,
@@ -82,9 +82,14 @@ export default defineEventHandler(async (event) => {
             await seedCategories(savedUser._id.toString());
 
             const token = jwt.sign(
-                {email, name: savedUser.name, id: savedUser._id},
+                {email, name: savedUser.name, id: savedUser._id, type: 'access'},
                 runTimeConfig.secretJwtKey,
                 {algorithm: "HS384"}
+            );
+            const refreshToken = jwt.sign(
+                { id: savedUser._id, type: 'refresh' },
+                runTimeConfig.secretJwtKey,
+                { algorithm: 'HS384', expiresIn: '7d' }
             );
             const dataUser = {
                 email: savedUser.email,
@@ -95,10 +100,23 @@ export default defineEventHandler(async (event) => {
             await useNitroApp().redis.set(token, dataUserString, {
                 EX: 60 * 60 * 24 // expired 1 hari
             });
+            try {
+                const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                const refreshDoc = new Token({ id_user: savedUser._id, token: refreshToken, expireAt });
+                await refreshDoc.save();
+            } catch (err) {
+                console.error('Failed to save refresh token', err);
+            }
             setCookie(event, "jwt", token, {
                 secure: true,
                 sameSite: "strict",
                 maxAge: 60 * 60 * 24,
+            });
+            setCookie(event, "refresh_token", refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60,
             });
             setResponseStatus(event, 201);
             return {
