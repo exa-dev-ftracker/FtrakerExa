@@ -16,6 +16,19 @@ const isLoading = ref(false);
 const selectedView = ref(transactionViewOptions[2]);
 const isHydrated = ref(false);
 const filterCategory = ref("all");
+type DateRange = [Date, Date] | null;
+const dateRange = ref<DateRange>(null);
+const appliedStartDate = ref("");
+const appliedEndDate = ref("");
+
+const toDateStr = (d: Date | null) => {
+  if (!d || !(d instanceof Date) || isNaN(+d)) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const isDark = computed(() => useColorMode().value === "dark");
 
 const { $axios } = useNuxtApp();
 const { data, status, refresh } = useAsyncData<TransactionResponse>("transactionsUser", async () => {
@@ -23,6 +36,10 @@ const { data, status, refresh } = useAsyncData<TransactionResponse>("transaction
       const params = new URLSearchParams({ view: selectedView.value });
       if (filterCategory.value && filterCategory.value !== "all") {
         params.append("category", filterCategory.value);
+      }
+      if (selectedView.value === "Custom") {
+        if (appliedStartDate.value) params.append("startDate", appliedStartDate.value);
+        if (appliedEndDate.value) params.append("endDate", appliedEndDate.value);
       }
       const res = await ($axios as any).get(`/api/transaction?${params.toString()}`);
       return res.data || res;
@@ -48,6 +65,10 @@ const sortBy = ref("newest");
 const transactionByDate = computed(() => {
   let transactionGroup: Record<string, Transaction[]> = {};
   let filtered = data.value?.body?.current || [];
+
+  if (selectedView.value === "Custom" && !customApplied.value) {
+    return {};
+  }
 
   if (filterType.value !== "All") {
     filtered = filtered.filter((t) => {
@@ -96,9 +117,42 @@ const handleEdit = (date: string, _id: string) => {
   store.editTransaction(transaction);
 };
 
-watch(selectedView, () => refresh());
+watch(selectedView, () => {
+  if (selectedView.value !== "Custom") {
+    refresh();
+  } else {
+    resetCustom();
+  }
+});
 watch(() => store.refreshTrigger, () => refresh());
 watch(filterCategory, () => refresh());
+
+const customApplied = computed(() => !!appliedStartDate.value && !!appliedEndDate.value);
+
+const displayedCount = computed(() =>
+  Object.values(transactionByDate.value).reduce((sum, group) => sum + group.length, 0)
+);
+
+const resetCustom = () => {
+  dateRange.value = null;
+  appliedStartDate.value = "";
+  appliedEndDate.value = "";
+};
+
+const applyCustomRange = () => {
+  const range = dateRange.value;
+  if (!range || range.length < 2) return;
+  const start = toDateStr(range[0]);
+  const end = toDateStr(range[1]);
+  if (!start || !end || end < start) return;
+  appliedStartDate.value = start;
+  appliedEndDate.value = end;
+  refresh();
+};
+
+const clearCustomRange = () => {
+  resetCustom();
+};
 </script>
 
 <template>
@@ -121,7 +175,7 @@ watch(filterCategory, () => refresh());
             <span class="text-sm font-black text-blue-600 uppercase tracking-widest">Financial History</span>
           </div>
           <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Transactions</h1>
-          <p class="text-gray-500 dark:text-gray-400 font-medium">Tracking {{ data?.body?.current?.length || 0 }} entries for this period.</p>
+          <p class="text-gray-500 dark:text-gray-400 font-medium">Tracking {{ displayedCount }} entries for this period.</p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -162,6 +216,46 @@ watch(filterCategory, () => refresh());
           >
             {{ view }}
           </button>
+        </div>
+
+        <div v-if="selectedView === 'Custom'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-2xl p-4">
+          <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div class="flex-1">
+              <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Date Range</label>
+              <VueDatePicker
+                v-model="dateRange"
+                range
+                :dark="isDark"
+                :max-date="new Date()"
+                :enable-time-picker="false"
+                :formats="{ input: 'yyyy-MM-dd', output: 'yyyy-MM-dd' }"
+                placeholder="Select start date"
+                :teleport="true"
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              <UButton 
+                @click="applyCustomRange" 
+                color="primary" 
+                icon="i-heroicons-check"
+                class="rounded-2xl px-6 font-black"
+              >
+                Apply
+              </UButton>
+              <UButton 
+                @click="clearCustomRange" 
+                color="gray" 
+                variant="ghost" 
+                icon="i-heroicons-x-mark"
+                class="rounded-2xl font-bold"
+              >
+                Clear
+              </UButton>
+            </div>
+          </div>
+          <p v-if="dateRange && dateRange.length > 1 && dateRange[1] < dateRange[0]" class="mt-3 flex items-center gap-1.5 text-xs font-semibold text-red-500">
+            <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4" /> End date must not be before the start date.
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -217,10 +311,10 @@ watch(filterCategory, () => refresh());
 
         <div v-else-if="Object.keys(transactionByDate).length === 0" class="text-center py-24 bg-white dark:bg-gray-900/50 rounded-[2.5rem] border border-dashed border-gray-200 dark:border-white/10">
           <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <UIcon name="i-heroicons-document-magnifying-glass" class="w-10 h-10 text-gray-400" />
+            <UIcon :name="selectedView === 'Custom' ? 'i-heroicons-calendar-days' : 'i-heroicons-document-magnifying-glass'" class="w-10 h-10 text-gray-400" />
           </div>
-          <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">No matching transactions</h3>
-          <p class="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-8 font-medium">Try adjusting your filters or add a new transaction to get started.</p>
+          <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">{{ selectedView === 'Custom' ? 'Pick a date range' : 'No matching transactions' }}</h3>
+          <p class="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-8 font-medium">{{ selectedView === 'Custom' ? 'Choose a start and end date above, then click Apply to load your transactions.' : 'Try adjusting your filters or add a new transaction to get started.' }}</p>
           <UButton @click="store.toggleTransactionModal(true)" color="primary" size="lg" class="rounded-2xl px-8 font-black">Add Transaction</UButton>
         </div>
 

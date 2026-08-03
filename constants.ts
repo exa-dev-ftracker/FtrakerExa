@@ -1,1 +1,1 @@
-export const transactionViewOptions = ['All', 'Year', 'Month', 'Week', 'Day']
+export const transactionViewOptions = ['All', 'Year', 'Month', 'Week', 'Day', 'Custom']

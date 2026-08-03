@@ -1,12 +1,21 @@
 import mongoose from "mongoose";
 import logger from "~/server/utils/logger";
 
-// Register all models at startup to prevent "Schema hasn't been registered" errors
+// Register all models at startup to prevent "Schema hasn't been registered" errors.
+// Models are referenced (not just imported) so the bundler does NOT tree-shake them out.
 import Users from "~/server/model/users";
 import Transactions from "~/server/model/transactions";
 import Category from "~/server/model/category";
 import Token from "~/server/model/token";
 import ResetToken from "~/server/model/resetToken";
+
+const ALL_MODELS = [
+    Users,
+    Transactions,
+    Category,
+    Token,
+    ResetToken,
+];
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -29,6 +38,8 @@ async function connectToMongoDB(attempt = 0): Promise<void> {
         const registeredModels = Object.keys(mongoose.models).join(", ");
         logger.info(`MongoDB connection established successfully`);
         logger.info(`Mongoose models registered: ${registeredModels}`);
+        // Keep model imports alive so the bundler doesn't strip the registrations above
+        logger.info(`All models loaded: ${ALL_MODELS.map((m) => m.modelName).join(", ")}`);
     } catch (error) {
         if (attempt < MAX_RETRIES) {
             const delay = Math.min(INITIAL_DELAY * Math.pow(2, attempt), MAX_DELAY);

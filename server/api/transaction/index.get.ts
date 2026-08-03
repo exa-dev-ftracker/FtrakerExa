@@ -32,6 +32,7 @@ export default defineEventHandler(async (events) => {
             }
         }
         const {view, category} = getQuery(events) as { view: string; category?: string };
+        const {startDate, endDate} = getQuery(events) as { startDate?: string; endDate?: string };
         const {lastPeriode, currentPeriode} = selectedViewPeriode(view);
         const user = await useNitroApp().redis.get(token);
         if (!user) {
@@ -49,6 +50,40 @@ export default defineEventHandler(async (events) => {
             baseQuery.category = { $exists: false };
         }
         const sortQuery = { createdAt: -1 };
+        if (view === "Custom") {
+            if (!startDate || !endDate) {
+                const custom = await transactions
+                    .find(baseQuery)
+                    .sort(sortQuery)
+                    .populate("category");
+                setResponseStatus(events, 200);
+                return {
+                    statusCode: 200,
+                    body: {
+                        current: custom,
+                        last: [],
+                    },
+                };
+            }
+            const custom = await transactions
+                .find({
+                    ...baseQuery,
+                    createdAt: {
+                        $gte: new Date(`${startDate}T00:00:00.000Z`),
+                        $lte: new Date(`${endDate}T23:59:59.999Z`),
+                    },
+                })
+                .sort(sortQuery)
+                .populate("category");
+            setResponseStatus(events, 200);
+            return {
+                statusCode: 200,
+                body: {
+                    current: custom,
+                    last: [],
+                },
+            };
+        }
         if (view === "All") {
             const all = await transactions
                 .find(baseQuery)
