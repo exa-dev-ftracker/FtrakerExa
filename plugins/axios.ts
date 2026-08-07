@@ -9,7 +9,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Use useCookie for consistent cookie handling (server sets cookie named `jwt`)
   const tokenCookie = useCookie("jwt", {
-    maxAge: 86400, // 1 day
+    maxAge: 900, // 15 minutes
     path: "/",
     sameSite: "strict",
     secure: import.meta.env.PROD,

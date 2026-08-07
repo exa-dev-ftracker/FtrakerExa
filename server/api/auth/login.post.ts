@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
                 const token = jwt.sign(
                     {email: user.email, name: user.name, id: user._id, type: 'access'},
                     runtimeConfig.secretJwtKey,
-                    {algorithm: "HS384"}
+                    {algorithm: "HS384", expiresIn: '15m'}
                 );
                 // create refresh token (longer lived) and store it server-side
                 const refreshToken = jwt.sign(
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
                 }
                 const dataUserString = JSON.stringify(dataUser);
                 await useNitroApp().redis.set(token, dataUserString, {
-                    EX: 60 * 60 * 24 // expired 1 hari
+                    EX: 60 * 15 // expired 15 menit
                 });
                 // Persist refresh token in DB with expireAt
                 try {
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
                 setCookie(event, "jwt", token, {
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: "strict",
-                    maxAge: 60 * 60 * 24,
+                    maxAge: 60 * 15,
                 });
                 // set httpOnly refresh token cookie
                 setCookie(event, "refresh_token", refreshToken, {

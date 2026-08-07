@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
             const token = jwt.sign(
                 {email, name: emailIsUser.name, id: emailIsUser._id, type: 'access'},
                 runTimeConfig.secretJwtKey,
-                {algorithm: "HS384"}
+                {algorithm: "HS384", expiresIn: '15m'}
             );
             const refreshToken = jwt.sign({ id: emailIsUser._id, type: 'refresh' }, runTimeConfig.secretJwtKey, { algorithm: 'HS384', expiresIn: '7d' });
             const dataUser = {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
             };
             const dataUserString = JSON.stringify(dataUser);
             await useNitroApp().redis.set(token, dataUserString, {
-                EX: 60 * 60 * 24 // expired 1 hari
+                EX: 60 * 15 // expired 15 menit
             });
             try {
                 const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
             setCookie(event, "jwt", token, {
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: "strict",
-                maxAge: 60 * 60 * 24,
+                maxAge: 60 * 15,
             });
             setCookie(event, "refresh_token", refreshToken, {
                 httpOnly: true,
@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
             const token = jwt.sign(
                 {email, name: savedUser.name, id: savedUser._id, type: 'access'},
                 runTimeConfig.secretJwtKey,
-                {algorithm: "HS384"}
+                {algorithm: "HS384", expiresIn: '15m'}
             );
             const refreshToken = jwt.sign(
                 { id: savedUser._id, type: 'refresh' },
@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
             };
             const dataUserString = JSON.stringify(dataUser);
             await useNitroApp().redis.set(token, dataUserString, {
-                EX: 60 * 60 * 24 // expired 1 hari
+                EX: 60 * 15 // expired 15 menit
             });
             try {
                 const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -110,7 +110,7 @@ export default defineEventHandler(async (event) => {
             setCookie(event, "jwt", token, {
                 secure: true,
                 sameSite: "strict",
-                maxAge: 60 * 60 * 24,
+                maxAge: 60 * 15,
             });
             setCookie(event, "refresh_token", refreshToken, {
                 httpOnly: true,

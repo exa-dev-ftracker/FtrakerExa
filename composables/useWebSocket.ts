@@ -13,18 +13,31 @@ export const useWebSocket = () => {
   let reconnectAttempts = 0;
   let isConnected = ref(false);
 
-  function getWsUrl(): string | null {
+  async function getWsUrl(): Promise<string | null> {
     const jwt = useCookie("jwt").value;
-    if (!jwt) return null;
+    if (!jwt) {
+      // access token sudah habis -> minta yang baru via refresh (cookie refresh_token dikirim otomatis)
+      try {
+        const res = await $fetch<{ body?: { token?: string } }>("/api/auth/refresh", {
+          method: "POST",
+        });
+        const fresh = useCookie("jwt").value || res.body?.token;
+        if (!fresh) return null;
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        return `${protocol}//${window.location.host}/_ws?token=${fresh}`;
+      } catch {
+        return null;
+      }
+    }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${protocol}//${window.location.host}/_ws?token=${jwt}`;
   }
 
-  function connect() {
+  async function connect() {
     if (!process.client) return;
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
-    const url = getWsUrl();
+    const url = await getWsUrl();
     if (!url) return;
 
     ws = new WebSocket(url);
