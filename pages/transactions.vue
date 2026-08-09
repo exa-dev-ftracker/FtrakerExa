@@ -21,6 +21,10 @@ const dateRange = ref<DateRange>(null);
 const appliedStartDate = ref("");
 const appliedEndDate = ref("");
 
+definePageMeta({
+  middleware: "is-auth",
+});
+
 const toDateStr = (d: Date | null) => {
   if (!d || !(d instanceof Date) || isNaN(+d)) return "";
   const y = d.getFullYear();

@@ -9,6 +9,10 @@ useHead({
   ],
 });
 
+definePageMeta({
+  middleware: "is-auth",
+});
+
 const toast = useToast();
 const selectedView = ref<"Week" | "Month" | "Year">("Month");
 const showError = ref(false);

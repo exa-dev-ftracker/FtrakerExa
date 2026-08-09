@@ -16,7 +16,10 @@ onMounted(async () => {
     document.referrer.includes("android-app://");
 
   if (isStandalone && route.path === "/") {
-    if (store.isAuth) {
+    // coba pulihkan sesi (refresh dulu jika access token habis) sebelum redirect
+    const { restoreSession } = useAuthSession();
+    const restored = await restoreSession();
+    if (restored) {
       await router.push("/dashboard");
     } else {
       await router.push("/login");

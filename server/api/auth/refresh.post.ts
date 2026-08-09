@@ -8,27 +8,58 @@ const ROTATE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // rotasi hanya jika sisa umur 
 export default defineEventHandler(async (event) => {
     try {
         const runtimeConfig = useRuntimeConfig();
-        const refreshToken = getCookie(event, 'refresh_token') as string | undefined;
-        if (!refreshToken) {
+
+        // browser bisa menyimpan lebih dari satu cookie `refresh_token`
+        // (misalnya cookie lama dari versi sebelumnya). Ambil semua nilainya
+        // dan pilih yang benar-benar valid di DB, agar refresh tidak gagal
+        // gara-gara ketuker sama cookie basi.
+        const rawCookie = getRequestHeader(event, 'cookie') ?? '';
+        const refreshTokens: string[] = [];
+        for (const part of rawCookie.split(';')) {
+            const idx = part.indexOf('=');
+            const name = part.slice(0, idx).trim();
+            if (name === 'refresh_token' && idx >= 0) {
+                const value = part.slice(idx + 1).trim();
+                try {
+                    refreshTokens.push(decodeURIComponent(value));
+                } catch {
+                    refreshTokens.push(value);
+                }
+            }
+        }
+
+        if (refreshTokens.length === 0) {
             setResponseStatus(event, 401);
             return { statusCode: 401, body: { message: 'No refresh token' } };
         }
 
-        // check in DB
-        const found = await Token.findOne({ token: refreshToken });
-        if (!found) {
-            setResponseStatus(event, 401);
-            return { statusCode: 401, body: { message: 'Invalid refresh token' } };
+        let refreshToken: string | null = null;
+        let found: any = null;
+
+        for (const candidate of refreshTokens) {
+            const doc = await Token.findOne({ token: candidate });
+            if (!doc) continue; // cookie lama/asing, lewati
+
+            if (doc.used) {
+                // deteksi replay: refresh token yang sudah dirotasi dipakai lagi
+                await Token.deleteMany({ id_user: doc.id_user });
+                deleteCookie(event, 'refresh_token');
+                deleteCookie(event, 'jwt');
+                setResponseStatus(event, 401);
+                return { statusCode: 401, body: { message: 'Refresh token reuse detected, all sessions revoked' } };
+            }
+
+            refreshToken = candidate;
+            found = doc;
+            break;
         }
 
-        // deteksi replay: refresh token yang sudah dirotasi dipakai lagi
-        if (found.used) {
-            // hapus SEMUA refresh token user => semua sesi logout
-            await Token.deleteMany({ id_user: found.id_user });
+        if (!refreshToken || !found) {
+            // tidak ada satupun yang valid, bersihkan cookie basi dari browser
             deleteCookie(event, 'refresh_token');
             deleteCookie(event, 'jwt');
             setResponseStatus(event, 401);
-            return { statusCode: 401, body: { message: 'Refresh token reuse detected, all sessions revoked' } };
+            return { statusCode: 401, body: { message: 'Invalid refresh token' } };
         }
 
         // verify

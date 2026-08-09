@@ -9,15 +9,13 @@ useHead({
   ],
 });
 
+definePageMeta({
+  middleware: "is-auth",
+});
+
 const router = useRouter();
 const store = useDefaultStore();
 const toast = useToast();
-
-// Check if user is authenticated
-const jwt = useCookie("jwt");
-if (!jwt.value) {
-  await navigateTo("/login");
-}
 
 const selectedView = ref<"Week" | "Month" | "Year">("Month");
 
@@ -27,7 +25,7 @@ const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
   async () => {
     try {
       const jwt = useCookie("jwt");
-      if (!jwt.value) {
+      if (!jwt.value && !store.jwt) {
         throw new Error("No JWT token found");
       }
       const res = await ($axios as any).get(
