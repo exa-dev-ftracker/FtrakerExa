@@ -17,8 +17,9 @@ definePageMeta({
 const store = useDefaultStore();
 
 const jwt = useCookie("jwt");
-if (jwt.value) {
-  await navigateTo("/dashboard");
+if (!jwt.value) {
+  const { restoreSession } = useAuthSession();
+  restoreSession();
 }
 </script>
 

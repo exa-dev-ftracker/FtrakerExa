@@ -25,7 +25,14 @@ const errorMessage = ref("");
 const accessToken = useCookie("jwt");
 
 if (accessToken.value) {
-  router.push("/dashboard");
+  navigateTo("/dashboard");
+} else {
+  const { restoreSession } = useAuthSession();
+  restoreSession().then((restored) => {
+    if (restored) {
+      navigateTo("/dashboard");
+    }
+  });
 }
 
 const formData = reactive({
