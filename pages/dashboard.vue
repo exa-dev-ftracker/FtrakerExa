@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, Transaction, TransactionResponse } from "~/types";
+import type { DashboardResponse } from "~/types";
 
 useHead({
   title: "FTraker - Dashboard",
@@ -20,7 +20,7 @@ const toast = useToast();
 const selectedView = ref<"Week" | "Month" | "Year">("Month");
 
 const { $axios } = useNuxtApp();
-const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
+const { data, status, error, refresh } = useAsyncData<DashboardResponse>(
   "dashboardData",
   async () => {
     try {
@@ -29,7 +29,7 @@ const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
         throw new Error("No JWT token found");
       }
       const res = await ($axios as any).get(
-        `/api/transaction?view=${selectedView.value}`,
+        `/api/dashboard?view=${selectedView.value}`,
       );
       return res.data || res;
     } catch (err: any) {
@@ -51,65 +51,13 @@ const loading = computed(() => {
   return status.value !== "success";
 });
 
-// Calculate key metrics
-const incomeTotal = computed(() => {
-  return (data.value?.body?.current || []).reduce(
-    (sum: number, t: Transaction) => {
-      return t.type.toLowerCase() === "income" ? sum + t.amount : sum;
-    },
-    0,
-  );
-});
-
-const expenseTotal = computed(() => {
-  return (data.value?.body?.current || []).reduce(
-    (sum: number, t: Transaction) => {
-      const type = t.type.toLowerCase();
-      return type === "expense" ? sum + t.amount : sum;
-    },
-    0,
-  );
-});
-
-const balance = computed(() => {
-  return incomeTotal.value - expenseTotal.value;
-});
-
-const recentTransactions = computed(() => {
-  const all = (data.value?.body?.current || []) as Transaction[];
-  return [...all]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .slice(0, 8); // Show more on refactored dashboard
-});
-
-const getCategoryName = (t: Transaction): string => {
-  if (typeof t.category === "object") return (t.category as Category).name;
-  return "General";
-};
-
-const topExpenses = computed(() => {
-  const map: Record<string, number> = {};
-  const expenses = (data.value?.body?.current || []).filter(
-    (t: Transaction) => {
-      const type = t.type.toLowerCase();
-      return type === "expense";
-    },
-  );
-  expenses.forEach((t: Transaction) => {
-    const name = getCategoryName(t);
-    map[name] = (map[name] || 0) + t.amount;
-  });
-  return Object.entries(map)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-});
-
-const transactionCount = computed(() => {
-  return (data.value?.body?.current || []).length;
-});
+// Key metrics directly from backend
+const incomeTotal = computed(() => data.value?.body?.metrics?.incomeTotal ?? 0);
+const expenseTotal = computed(() => data.value?.body?.metrics?.expenseTotal ?? 0);
+const balance = computed(() => data.value?.body?.metrics?.balance ?? 0);
+const transactionCount = computed(() => data.value?.body?.metrics?.transactionCount ?? 0);
+const recentTransactions = computed(() => data.value?.body?.recentTransactions ?? []);
+const topExpenses = computed(() => data.value?.body?.topExpenses ?? []);
 
 watch(selectedView, async () => {
   await refresh();
@@ -428,26 +376,27 @@ const currency = (val: number) => {
             </h3>
             <div v-if="topExpenses.length > 0" class="space-y-4">
               <div
-                v-for="[desc, amount] in topExpenses"
-                :key="desc"
+                v-for="item in topExpenses"
+                :key="item.name"
                 class="space-y-2"
               >
                 <div class="flex justify-between items-end gap-2">
-                  <span
-                    class="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[100px] sm:max-w-[150px]"
-                    >{{ desc }}</span
-                  >
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <UIcon :name="item.icon || 'i-heroicons-tag'" class="w-4 h-4 text-slate-400 shrink-0" />
+                    <span
+                      class="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[120px] sm:max-w-[180px]"
+                    >{{ item.name }}</span>
+                  </div>
                   <span
                     class="text-xs sm:text-sm font-black text-slate-900 dark:text-white shrink-0"
-                    >{{ currency(amount) }}</span
-                  >
+                  >{{ currency(item.amount) }}</span>
                 </div>
                 <div
                   class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"
                 >
                   <div
-                    class="h-full bg-blue-600 rounded-full"
-                    :style="{ width: `${(amount / expenseTotal) * 100}%` }"
+                    class="h-full rounded-full transition-all duration-500"
+                    :style="{ width: `${item.percentage}%`, backgroundColor: item.color || '#3b82f6' }"
                   ></div>
                 </div>
               </div>

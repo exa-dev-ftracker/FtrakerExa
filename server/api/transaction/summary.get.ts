@@ -1,12 +1,8 @@
 import transactions from "~/server/model/transactions";
-import Category from "~/server/model/category";
 import selectedViewPeriode from "~/server/utils/selectedViewPeriode";
 import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 import type { dataUserRedis } from "~/types";
-
-// Ensure Category model is registered for populate
-const _registerCategory = Category;
 
 export default defineEventHandler(async (events) => {
     try {
@@ -20,6 +16,7 @@ export default defineEventHandler(async (events) => {
                 message: "Unauthorized: No token provided",
             };
         }
+
         const isValidToken = jwt.verify(
             token,
             runTimeConfig.secretJwtKey as string
@@ -40,34 +37,16 @@ export default defineEventHandler(async (events) => {
                 message: "Unauthorized: User not found",
             };
         }
-        const dataUser: dataUserRedis = JSON.parse(user);
 
-        const {
-            view = "Month",
-            category,
-            startDate,
-            endDate,
-            page,
-            limit,
-            search,
-            type,
-            sort = "newest",
-        } = getQuery(events) as {
+        const dataUser: dataUserRedis = JSON.parse(user);
+        const { view = "Month", category, startDate, endDate, search, type } = getQuery(events) as {
             view?: string;
             category?: string;
             startDate?: string;
             endDate?: string;
-            page?: string;
-            limit?: string;
             search?: string;
             type?: string;
-            sort?: string;
         };
-
-        const isPaginated = page !== undefined || limit !== undefined;
-        const pageNum = Math.max(1, parseInt(page as string) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
-        const skip = (pageNum - 1) * limitNum;
 
         const baseQuery: Record<string, any> = { user: dataUser.id };
 
@@ -87,17 +66,7 @@ export default defineEventHandler(async (events) => {
             baseQuery.description = { $regex: search.trim(), $options: "i" };
         }
 
-        // Sorting options
-        let sortQuery: Record<string, any> = { createdAt: -1 };
-        if (sort === "oldest") {
-            sortQuery = { createdAt: 1 };
-        } else if (sort === "highest") {
-            sortQuery = { amount: -1, createdAt: -1 };
-        } else if (sort === "lowest") {
-            sortQuery = { amount: 1, createdAt: -1 };
-        }
-
-        // Apply date range
+        // Apply date filters based on view
         if (view === "Custom") {
             if (startDate && endDate) {
                 baseQuery.createdAt = {
@@ -116,79 +85,41 @@ export default defineEventHandler(async (events) => {
             }
         }
 
-        // Paginated mode (used by infinite scroll in transactions page)
-        if (isPaginated) {
-            const total = await transactions.countDocuments(baseQuery);
-            const current = await transactions
-                .find(baseQuery)
-                .sort(sortQuery)
-                .skip(skip)
-                .limit(limitNum)
-                .populate("category");
+        const items = await transactions.find(baseQuery).select("amount type").lean();
 
-            const totalPages = Math.ceil(total / limitNum);
-            const hasMore = pageNum < totalPages;
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let incomeCount = 0;
+        let expenseCount = 0;
 
-            setResponseStatus(events, 200);
-            return {
-                statusCode: 200,
-                body: {
-                    current,
-                    last: [],
-                    pagination: {
-                        page: pageNum,
-                        limit: limitNum,
-                        total,
-                        totalPages,
-                        hasMore,
-                    },
-                },
-            };
+        for (const item of items) {
+            const t = item.type?.toLowerCase();
+            if (t === "income") {
+                totalIncome += item.amount || 0;
+                incomeCount++;
+            } else {
+                totalExpense += item.amount || 0;
+                expenseCount++;
+            }
         }
 
-        // Legacy / Unpaginated mode (used by Dashboard and Analytics)
-        if (view === "Custom" || view === "All") {
-            const current = await transactions
-                .find(baseQuery)
-                .sort(sortQuery)
-                .populate("category");
-
-            setResponseStatus(events, 200);
-            return {
-                statusCode: 200,
-                body: {
-                    current,
-                    last: [],
-                },
-            };
-        }
-
-        // Periodic comparison for Dashboard (current vs last period)
-        const { lastPeriode, currentPeriode } = selectedViewPeriode(view);
-        const current = await transactions
-            .find({ ...baseQuery })
-            .sort(sortQuery)
-            .gte("createdAt", currentPeriode().start)
-            .lte("createdAt", currentPeriode().end)
-            .populate("category");
-
-        const last = await transactions
-            .find({ ...baseQuery })
-            .sort(sortQuery)
-            .gte("createdAt", lastPeriode().start)
-            .lte("createdAt", lastPeriode().end)
-            .populate("category");
+        const balance = totalIncome - totalExpense;
+        const totalCount = items.length;
 
         setResponseStatus(events, 200);
         return {
             statusCode: 200,
             body: {
-                current,
-                last,
+                totalIncome,
+                totalExpense,
+                balance,
+                totalCount,
+                incomeCount,
+                expenseCount,
             },
         };
     } catch (error) {
-        logger.error(`Error in get transaction: ${error}`);
+        logger.error(`Error in get transaction summary: ${error}`);
         if (error instanceof Error) {
             if (error.name === "JsonWebTokenError") {
                 setResponseStatus(events, 401);

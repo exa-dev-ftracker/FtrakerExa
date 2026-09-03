@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, Transaction, TransactionResponse } from "~/types";
+import type { AnalyticsResponse } from "~/types";
 
 useHead({
   title: "FTraker - Analytics",
@@ -18,11 +18,11 @@ const selectedView = ref<"Week" | "Month" | "Year">("Month");
 const showError = ref(false);
 
 const { $axios } = useNuxtApp();
-const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
+const { data, status, error, refresh } = useAsyncData<AnalyticsResponse>(
   "analyticsData",
   async () => {
     try {
-      const res = await ($axios as any).get(`/api/transaction?view=${selectedView.value}`);
+      const res = await ($axios as any).get(`/api/analytics?view=${selectedView.value}`);
       return res.data || res;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to fetch analytics");
@@ -31,44 +31,15 @@ const { data, status, error, refresh } = useAsyncData<TransactionResponse>(
 );
 const loading = computed(() => status.value !== "success");
 
-const getCategoryName = (t: Transaction): string => {
-  if (typeof t.category === "object") return (t.category as Category).name;
-  return "Unknown";
-};
-
-// Calculations
-const incomeByCategory = computed(() => {
-  const map: Record<string, number> = {};
-  (data.value?.body?.current || [])
-    .filter(t => t.type.toLowerCase() === "income")
-    .forEach(t => {
-      const name = getCategoryName(t);
-      map[name] = (map[name] || 0) + t.amount;
-    });
-  return Object.entries(map).sort((a, b) => b[1] - a[1]);
-});
-
-const expenseByCategory = computed(() => {
-  const map: Record<string, number> = {};
-  (data.value?.body?.current || [])
-    .filter(t => t.type.toLowerCase() === "expense")
-    .forEach(t => {
-      const name = getCategoryName(t);
-      map[name] = (map[name] || 0) + t.amount;
-    });
-  return Object.entries(map).sort((a, b) => b[1] - a[1]);
-});
-
-const incomeTotal = computed(() => (data.value?.body?.current || []).reduce((s, t) => t.type.toLowerCase() === "income" ? s + t.amount : s, 0));
-const expenseTotal = computed(() => (data.value?.body?.current || []).reduce((s, t) => t.type.toLowerCase() === "expense" ? s + t.amount : s, 0));
-const transactionCount = computed(() => (data.value?.body?.current || []).length);
-const averageTransaction = computed(() => transactionCount.value > 0 ? (incomeTotal.value + expenseTotal.value) / transactionCount.value : 0);
-const largestTransaction = computed(() => {
-  const all = data.value?.body?.current || [];
-  return all.length > 0 ? Math.max(...all.map(t => t.amount)) : 0;
-});
-
-const getPercentage = (v: number, t: number) => t > 0 ? Math.round((v / t) * 100) : 0;
+// Server-computed metrics
+const incomeTotal = computed(() => data.value?.body?.metrics?.incomeTotal ?? 0);
+const expenseTotal = computed(() => data.value?.body?.metrics?.expenseTotal ?? 0);
+const netSavings = computed(() => data.value?.body?.metrics?.netSavings ?? 0);
+const transactionCount = computed(() => data.value?.body?.metrics?.transactionCount ?? 0);
+const averageTransaction = computed(() => data.value?.body?.metrics?.averageTransaction ?? 0);
+const largestTransaction = computed(() => data.value?.body?.metrics?.largestTransaction ?? 0);
+const incomeByCategory = computed(() => data.value?.body?.incomeByCategory ?? []);
+const expenseByCategory = computed(() => data.value?.body?.expenseByCategory ?? []);
 
 watch(selectedView, () => refresh());
 </script>
@@ -108,7 +79,7 @@ watch(selectedView, () => refresh());
                  <span class="font-black text-blue-600">{{ selectedView }} View</span>
               </template>
            </USelectMenu>
-           <UButton @click="refresh" icon="i-heroicons-arrow-path" color="gray" variant="soft" :loading="loading" class="rounded-2xl h-12 w-12 flex items-center justify-center" />
+           <UButton @click="refresh" icon="i-heroicons-arrow-path" color="gray" variant="soft" :loading="loading" class="rounded-2xl h-12 w-12 flex items-center justify-center" aria-label="Refresh analytics" />
         </div>
       </Motion>
 
@@ -118,7 +89,7 @@ watch(selectedView, () => refresh());
            v-for="(metric, i) in [
              { label: 'Total Income', val: incomeTotal, icon: 'i-heroicons-arrow-up-circle', color: 'text-emerald-500', bg: 'bg-emerald-500/10', prefix: '+' },
              { label: 'Total Expenses', val: expenseTotal, icon: 'i-heroicons-arrow-down-circle', color: 'text-rose-500', bg: 'bg-rose-500/10', prefix: '-' },
-             { label: 'Net Savings', val: incomeTotal - expenseTotal, icon: 'i-heroicons-banknotes', color: 'text-blue-500', bg: 'bg-blue-500/10', prefix: (incomeTotal - expenseTotal >= 0 ? '+' : '-') },
+             { label: 'Net Savings', val: netSavings, icon: 'i-heroicons-banknotes', color: 'text-blue-500', bg: 'bg-blue-500/10', prefix: (netSavings >= 0 ? '+' : '-') },
              { label: 'Volume', val: transactionCount, icon: 'i-heroicons-document-text', color: 'text-purple-500', bg: 'bg-purple-500/10', isRaw: true }
            ]" 
            :key="i" 
@@ -136,7 +107,8 @@ watch(selectedView, () => refresh());
                  <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{{ metric.label }}</p>
                  <h2 class="text-2xl font-black text-gray-900 dark:text-white">
                    <template v-if="!metric.isRaw">{{ metric.prefix }}{{ currency(Math.abs(metric.val)) }}</template>
-                   <template v-else>{{ metric.val }}</template></h2 >
+                   <template v-else>{{ metric.val }}</template>
+                 </h2>
               </div>
            </div>
         </Motion>
@@ -157,21 +129,27 @@ watch(selectedView, () => refresh());
            </h3>
            <div v-if="incomeByCategory.length > 0" class="space-y-8">
               <Motion 
-                v-for="([desc, amt], i) in incomeByCategory" 
-                :key="i" 
+                v-for="(item, i) in incomeByCategory" 
+                :key="item.name" 
                 :initial="{ opacity: 0, x: -20 }"
                 :animate="{ opacity: 1, x: 0 }"
                 :transition="{ delay: i * 0.05 + 1.2 }"
                 class="progress-item space-y-3"
               >
                  <div class="flex justify-between items-end">
-                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ desc }}</span>
-                    <span class="text-sm font-black text-emerald-500">{{ getPercentage(amt, incomeTotal) }}%</span>
+                    <div class="flex items-center gap-2 min-w-0">
+                      <UIcon :name="item.icon || 'i-heroicons-tag'" class="w-4 h-4 shrink-0" :style="{ color: item.color || '#10b981' }" />
+                      <span class="font-bold text-gray-700 dark:text-gray-300 truncate">{{ item.name }}</span>
+                    </div>
+                    <span class="text-sm font-black text-emerald-500 shrink-0">{{ item.percentage }}%</span>
                  </div>
                  <div class="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" :style="{ width: getPercentage(amt, incomeTotal) + '%' }"></div>
+                    <div
+                      class="h-full rounded-full transition-all duration-500"
+                      :style="{ width: item.percentage + '%', backgroundColor: item.color || '#10b981' }"
+                    ></div>
                  </div>
-                 <p class="text-xs font-black text-gray-400 uppercase tracking-tighter">{{ currency(amt) }}</p>
+                 <p class="text-xs font-black text-gray-400 uppercase tracking-tighter">{{ currency(item.amount) }}</p>
               </Motion>
            </div>
            <div v-else class="text-center py-20 text-gray-400 font-bold uppercase tracking-widest text-sm">No Income Logged</div>
@@ -190,21 +168,27 @@ watch(selectedView, () => refresh());
            </h3>
            <div v-if="expenseByCategory.length > 0" class="space-y-8">
               <Motion 
-                v-for="([desc, amt], i) in expenseByCategory" 
-                :key="i" 
+                v-for="(item, i) in expenseByCategory" 
+                :key="item.name" 
                 :initial="{ opacity: 0, x: -20 }"
                 :animate="{ opacity: 1, x: 0 }"
                 :transition="{ delay: i * 0.05 + 1.4 }"
                 class="progress-item space-y-3"
               >
                  <div class="flex justify-between items-end">
-                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ desc }}</span>
-                    <span class="text-sm font-black text-rose-500">{{ getPercentage(amt, expenseTotal) }}%</span>
+                    <div class="flex items-center gap-2 min-w-0">
+                      <UIcon :name="item.icon || 'i-heroicons-tag'" class="w-4 h-4 shrink-0" :style="{ color: item.color || '#f43f5e' }" />
+                      <span class="font-bold text-gray-700 dark:text-gray-300 truncate">{{ item.name }}</span>
+                    </div>
+                    <span class="text-sm font-black text-rose-500 shrink-0">{{ item.percentage }}%</span>
                  </div>
                  <div class="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full" :style="{ width: getPercentage(amt, expenseTotal) + '%' }"></div>
+                    <div
+                      class="h-full rounded-full transition-all duration-500"
+                      :style="{ width: item.percentage + '%', backgroundColor: item.color || '#f43f5e' }"
+                    ></div>
                  </div>
-                 <p class="text-xs font-black text-gray-400 uppercase tracking-tighter">{{ currency(amt) }}</p>
+                 <p class="text-xs font-black text-gray-400 uppercase tracking-tighter">{{ currency(item.amount) }}</p>
               </Motion>
            </div>
            <div v-else class="text-center py-20 text-gray-400 font-bold uppercase tracking-widest text-sm">No Expenses Logged</div>
@@ -237,4 +221,3 @@ watch(selectedView, () => refresh());
     </div>
   </div>
 </template>
-
