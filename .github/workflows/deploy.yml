@@ -2,7 +2,7 @@ name: Build & Deploy Nuxt JS to VPS via GHCR
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-deploy:
@@ -32,12 +32,12 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p 31080 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-          
+
           ssh -p 31080 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << EOF
           export KUBECONFIG=/home/deploy/.kube/config
 
           # Patch the deployment to use the new SHA tag
-          kubectl set image deployment/f-tracker -n dev-coffe \
+          kubectl set image deployment/f-tracker -n f-tracker \
             f-tracker=ghcr.io/${{ github.repository_owner }}/f-tracker:${{ steps.vars.outputs.sha }}
 
           EOF
