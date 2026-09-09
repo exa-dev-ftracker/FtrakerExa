@@ -28,18 +28,6 @@ const categoryData = computed<Category>(() => {
   };
 });
 
-const formattedTime = computed(() => {
-  if (!props.data?.createdAt) return "";
-  try {
-    const d = new Date(props.data.createdAt);
-    return d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
-});
 
 const action = [
   [
@@ -99,19 +87,11 @@ const action = [
         </div>
 
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h4
-              class="text-sm sm:text-base font-black text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
-            >
-              {{ props.data.description }}
-            </h4>
-            <span
-              v-if="formattedTime"
-              class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 hidden sm:inline-block"
-            >
-              {{ formattedTime }}
-            </span>
-          </div>
+          <h4
+            class="text-sm sm:text-base font-black text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+          >
+            {{ props.data.description }}
+          </h4>
 
           <div class="flex items-center gap-2 mt-1.5 flex-wrap">
             <span
@@ -149,12 +129,6 @@ const action = [
           >
             {{ isIncome ? "+" : "-" }}{{ currency(props.data.amount) }}
           </p>
-          <span
-            v-if="formattedTime"
-            class="text-[10px] font-semibold text-gray-400 sm:hidden block"
-          >
-            {{ formattedTime }}
-          </span>
         </div>
 
         <UDropdown
