@@ -48,7 +48,7 @@ export default defineNuxtConfig({
   },
   googleSignIn: {
     clientId:
-      "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com",
+      process.env.NUXT_GOOGLE_CLIENT_ID || "",
   },
   modules: [
     "@pinia/nuxt",
