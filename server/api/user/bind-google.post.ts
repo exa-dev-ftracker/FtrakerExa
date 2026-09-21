@@ -52,22 +52,54 @@ export default defineEventHandler(async (event) => {
             };
         }
 
-        const body = await readBody<{ credential: string }>(event);
-        if (!body?.credential) {
+        const body = await readBody<{ credential?: string; code?: string }>(event);
+        if (!body?.credential && !body?.code) {
             setResponseStatus(event, 400);
             return {
                 statusCode: 400,
-                body: { message: "Google credential is required" },
+                body: { message: "Google authorization code or credential is required" },
             };
         }
 
-        const client = new OAuth2Client(runtimeConfig.google.clientId);
-        const ticket = await client.verifyIdToken({
-            idToken: body.credential,
-            audience: runtimeConfig.google.clientId,
-        });
+        let email = "";
+        let email_verified = false;
+        let sub = "";
 
-        const { email, email_verified, sub } = ticket.getPayload() as GoogleDecoded;
+        if (body.code) {
+            const client = new OAuth2Client(
+                runtimeConfig.google.clientId,
+                runtimeConfig.google.clientSecret,
+                "postmessage"
+            );
+            const { tokens } = await client.getToken(body.code);
+            if (tokens.id_token) {
+                const ticket = await client.verifyIdToken({
+                    idToken: tokens.id_token,
+                    audience: runtimeConfig.google.clientId,
+                });
+                const payload = ticket.getPayload() as GoogleDecoded;
+                email = payload.email;
+                email_verified = payload.email_verified;
+                sub = payload.sub;
+            } else if (tokens.access_token) {
+                const userInfo: any = await $fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                    headers: { Authorization: `Bearer ${tokens.access_token}` },
+                });
+                email = userInfo.email;
+                email_verified = Boolean(userInfo.email_verified);
+                sub = userInfo.sub;
+            }
+        } else if (body.credential) {
+            const client = new OAuth2Client(runtimeConfig.google.clientId);
+            const ticket = await client.verifyIdToken({
+                idToken: body.credential,
+                audience: runtimeConfig.google.clientId,
+            });
+            const payload = ticket.getPayload() as GoogleDecoded;
+            email = payload.email;
+            email_verified = payload.email_verified;
+            sub = payload.sub;
+        }
 
         if (!email_verified) {
             setResponseStatus(event, 400);

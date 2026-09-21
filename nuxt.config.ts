@@ -51,13 +51,9 @@ export default defineNuxtConfig({
       ],
     },
   },
-  googleSignIn: {
-    clientId: process.env.NUXT_GOOGLE_CLIENT_ID || "",
-  },
   modules: [
     "@pinia/nuxt",
     "@nuxt/ui",
-    "nuxt-vue3-google-signin",
     "motion-v/nuxt",
   ],
   motionV: {
@@ -78,9 +74,6 @@ export default defineNuxtConfig({
     public: {
       google: {
         clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
-      },
-      googleSignIn: {
-        clientId: process.env.NUXT_GOOGLE_CLIENT_ID || "",
       },
       appleClientId:
         process.env.NUXT_PUBLIC_APPLE_CLIENT_ID ||
