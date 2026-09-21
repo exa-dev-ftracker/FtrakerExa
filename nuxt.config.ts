@@ -52,9 +52,7 @@ export default defineNuxtConfig({
     },
   },
   googleSignIn: {
-    clientId:
-      process.env.NUXT_GOOGLE_CLIENT_ID ||
-      "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com",
+    clientId: process.env.NUXT_GOOGLE_CLIENT_ID || "",
   },
   modules: [
     "@pinia/nuxt",
@@ -75,21 +73,19 @@ export default defineNuxtConfig({
       clientSecret: process.env.NUXT_GOOGLE_CLIENT_SECRET,
     },
     apple: {
-      clientId: process.env.NUXT_APPLE_CLIENT_ID || "cloud.eka-dev.portfolio",
+      clientId: process.env.NUXT_APPLE_CLIENT_ID || "",
     },
     public: {
       google: {
         clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
       },
       googleSignIn: {
-        clientId:
-          process.env.NUXT_GOOGLE_CLIENT_ID ||
-          "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com",
+        clientId: process.env.NUXT_GOOGLE_CLIENT_ID || "",
       },
       appleClientId:
         process.env.NUXT_PUBLIC_APPLE_CLIENT_ID ||
         process.env.NUXT_APPLE_CLIENT_ID ||
-        "cloud.eka-dev.portfolio",
+        "",
     },
   },
   nitro: {
