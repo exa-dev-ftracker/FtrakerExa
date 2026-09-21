@@ -19,6 +19,7 @@ definePageMeta({
 const toast = useToast();
 const router = useRouter();
 const store = useDefaultStore();
+const { signInWithApple, isAppleLoading } = useAppleSignIn();
 const haveError = ref(false);
 const isLoading = ref(false);
 const isLoadingGoogle = ref(false);
@@ -232,7 +233,7 @@ const handleSubmit = async () => {
                   : 'text-gray-500',
               ]"
             >
-              Google Account
+              Google / Apple
             </button>
           </Motion>
 
@@ -350,16 +351,49 @@ const handleSubmit = async () => {
               :initial="{ opacity: 0 }"
               :animate="{ opacity: 1 }"
               :transition="{ delay: 1.0 }"
-              class="text-center space-y-6 py-4"
+              class="text-center space-y-6 py-4 max-w-sm mx-auto"
             >
-              <p class="text-gray-500 dark:text-gray-400 font-medium">
-                Use your Google account for a 1-click registration.
+              <p class="text-gray-500 dark:text-gray-400 font-medium text-sm">
+                Use your Google or Apple account for a 1-click registration.
               </p>
-              <div class="flex justify-center scale-125">
-                <GoogleSignInButton
-                  @success="handleGoogleSignUp"
-                  @error="handleGoogleError"
-                />
+              
+              <div class="space-y-4">
+                <div class="flex justify-center">
+                  <GoogleSignInButton
+                    @success="handleGoogleSignUp"
+                    @error="handleGoogleError"
+                  />
+                </div>
+
+                <div class="relative py-2">
+                  <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-200 dark:border-white/5"></div>
+                  </div>
+                  <div class="relative flex justify-center text-[10px] uppercase font-black text-gray-400">
+                    <span class="bg-white dark:bg-[#0d1117] px-3">or</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  @click="signInWithApple"
+                  :disabled="isAppleLoading || isLoadingGoogle"
+                  class="w-full py-3.5 px-4 bg-black hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <UIcon
+                    v-if="isAppleLoading"
+                    name="i-heroicons-arrow-path"
+                    class="w-5 h-5 animate-spin"
+                  />
+                  <svg
+                    v-else
+                    class="w-5 h-5 fill-current"
+                    viewBox="0 0 170 170"
+                  >
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.66-7.85-11.89-14.43-6.24-9.8-11.01-20.9-14.3-33.3-3.29-12.4-4.94-23.7-4.94-33.9 0-14.65 3.82-26.68 11.45-36.08 7.64-9.4 17.02-14.23 28.16-14.5 5.37.13 11.2 1.44 17.5 3.93 6.3 2.5 10.45 3.82 12.45 3.95 2.57-.27 7.02-1.74 13.35-4.41 6.33-2.67 11.96-3.87 16.89-3.6 12.55.8 22.86 5.57 30.93 14.3-10.98 6.64-16.32 15.7-16.02 27.18.3 9.4 3.95 17.3 10.95 23.7 4.1 3.73 8.84 6.38 14.22 7.95-2.3 6.8-5.06 13.6-8.28 20.4zM119.22 33.64c0-7.3 2.66-14.22 7.98-20.76 5.32-6.54 11.83-10.87 19.53-13-1.07 7.18-3.92 13.9-8.55 20.16-4.63 6.26-10.94 10.8-18.96 13.6z"/>
+                  </svg>
+                  <span>{{ isAppleLoading ? "Connecting to Apple..." : "Sign up with Apple" }}</span>
+                </button>
               </div>
             </Motion>
           </template>

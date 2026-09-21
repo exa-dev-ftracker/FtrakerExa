@@ -43,6 +43,11 @@ export default defineNuxtConfig({
           async: true,
           defer: true,
         },
+        {
+          src: "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js",
+          async: true,
+          defer: true,
+        },
       ],
     },
   },
@@ -68,10 +73,17 @@ export default defineNuxtConfig({
       clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
       clientSecret: process.env.NUXT_GOOGLE_CLIENT_SECRET,
     },
+    apple: {
+      clientId: process.env.NUXT_APPLE_CLIENT_ID || "cloud.eka-dev.portfolio",
+    },
     public: {
       google: {
         clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
       },
+      appleClientId:
+        process.env.NUXT_PUBLIC_APPLE_CLIENT_ID ||
+        process.env.NUXT_APPLE_CLIENT_ID ||
+        "cloud.eka-dev.portfolio",
     },
   },
   nitro: {

@@ -1,10 +1,12 @@
 import Users from "~/server/model/users";
+import jwt from "jsonwebtoken";
 import logger from "~/server/utils/logger";
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get JWT token from cookies
-    const token = getCookie(event, "jwt");
+    // Get JWT token from cookies or Authorization header
+    const runtimeConfig = useRuntimeConfig();
+    const token = getCookie(event, "jwt") || getHeader(event, "Authorization")?.replace("Bearer ", "");
     if (!token) {
       setResponseStatus(event, 401);
       return {
@@ -13,23 +15,31 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Verify token and get user from Redis
+    let userId = "";
+
+    // Verify token from Redis or fallback to JWT decode
     const redis = useNitroApp().redis;
     const userData = await redis.get(token);
 
-    if (!userData) {
-      setResponseStatus(event, 401);
-      return {
-        statusCode: 401,
-        body: { message: "Session expired" },
-      };
+    if (userData) {
+      const user = JSON.parse(userData as string);
+      userId = user.id;
+    } else {
+      try {
+        const decoded: any = jwt.verify(token, runtimeConfig.secretJwtKey);
+        userId = decoded.id;
+      } catch {
+        setResponseStatus(event, 401);
+        return {
+          statusCode: 401,
+          body: { message: "Session expired" },
+        };
+      }
     }
 
-    const user = JSON.parse(userData as string);
-
-    // Fetch user's WhatsApp settings
-    const userDoc = await Users.findById(user.id).select(
-      'phone_number chatbot_enabled name email'
+    // Fetch user details including OAuth connection info
+    const userDoc = await Users.findById(userId).select(
+      'phone_number chatbot_enabled name email google_id google_email apple_id apple_email'
     );
 
     if (!userDoc) {
@@ -48,6 +58,12 @@ export default defineEventHandler(async (event) => {
         email: userDoc.email,
         phone_number: userDoc.phone_number || null,
         chatbot_enabled: userDoc.chatbot_enabled || false,
+        google_id: userDoc.google_id || null,
+        google_email: userDoc.google_email || null,
+        is_google_linked: Boolean(userDoc.google_id),
+        apple_id: userDoc.apple_id || null,
+        apple_email: userDoc.apple_email || null,
+        is_apple_linked: Boolean(userDoc.apple_id),
       },
     };
   } catch (error) {

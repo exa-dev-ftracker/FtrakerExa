@@ -9,6 +9,7 @@ interface Decoded {
     email: string;
     email_verified: boolean;
     name: string;
+    sub: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
             idToken: body.credential,
             audience: runTimeConfig.google.clientId,
         });
-        const {email, email_verified, name} = decoded.getPayload() as Decoded;
+        const {email, email_verified, name, sub} = decoded.getPayload() as Decoded;
         if (!email_verified) {
             setResponseStatus(event, 401);
             return {
@@ -31,6 +32,13 @@ export default defineEventHandler(async (event) => {
         }
         const emailIsUser: User | null = await users.findOne({email: email});
         if (emailIsUser) {
+            // Existing user - link Google ID if not yet linked
+            if (!emailIsUser.google_id) {
+                emailIsUser.google_id = sub;
+                emailIsUser.google_email = email;
+                await emailIsUser.save();
+            }
+
             // Existing user - login
             const token = jwt.sign(
                 {email, name: emailIsUser.name, id: emailIsUser._id, type: 'access'},
@@ -71,11 +79,13 @@ export default defineEventHandler(async (event) => {
                 body: {message: "Login successful", token, user: dataUser},
             };
         } else {
-            // New user - create account without password
+            // New user - create account with Google link
             const newUser = new users({
                 name: name,
                 email: email,
                 password: null, // No password for Google sign-up initially
+                google_id: sub,
+                google_email: email,
             });
             
             const savedUser = await newUser.save();
