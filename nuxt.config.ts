@@ -53,7 +53,8 @@ export default defineNuxtConfig({
   },
   googleSignIn: {
     clientId:
-      process.env.NUXT_GOOGLE_CLIENT_ID || "",
+      process.env.NUXT_GOOGLE_CLIENT_ID ||
+      "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com",
   },
   modules: [
     "@pinia/nuxt",
@@ -79,6 +80,11 @@ export default defineNuxtConfig({
     public: {
       google: {
         clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
+      },
+      googleSignIn: {
+        clientId:
+          process.env.NUXT_GOOGLE_CLIENT_ID ||
+          "897905079551-qu5rj92oq3ck03kbt9ohjkfaacpnn0ea.apps.googleusercontent.com",
       },
       appleClientId:
         process.env.NUXT_PUBLIC_APPLE_CLIENT_ID ||
