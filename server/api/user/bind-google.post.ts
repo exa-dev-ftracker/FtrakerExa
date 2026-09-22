@@ -109,6 +109,19 @@ export default defineEventHandler(async (event) => {
             };
         }
 
+        // Determine if user is registered via Apple
+        const isAppleRegistered = Boolean(
+            user.apple_id && (!user.password || user.email?.includes('privaterelay.appleid.com'))
+        );
+
+        if (!isAppleRegistered && user.email.toLowerCase() !== email.toLowerCase()) {
+            setResponseStatus(event, 400);
+            return {
+                statusCode: 400,
+                body: { message: `Cannot bind a different Google account. Your account is already linked to ${user.email}.` },
+            };
+        }
+
         // Check if this Google account is already linked to another user
         const existingUser = await Users.findOne({ google_id: sub });
         if (existingUser && existingUser._id.toString() !== user._id.toString()) {

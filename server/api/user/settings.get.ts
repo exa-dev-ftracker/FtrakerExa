@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
 
     // Fetch user details including OAuth connection info
     const userDoc = await Users.findById(userId).select(
-      'phone_number chatbot_enabled name email google_id google_email apple_id apple_email'
+      'phone_number chatbot_enabled name email google_id google_email apple_id apple_email password'
     );
 
     if (!userDoc) {
@@ -50,6 +50,16 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    // Determine if the user was originally registered via Apple (e.g. has Apple ID and no password / relay email)
+    const isAppleRegistered = Boolean(
+      userDoc.apple_id && (!userDoc.password || userDoc.email?.includes('privaterelay.appleid.com'))
+    );
+
+    // If user is NOT registered via Apple (registered via Email/Password or direct Google),
+    // Google account is already fixed to their verified primary email.
+    const isGoogleLinked = isAppleRegistered ? Boolean(userDoc.google_id) : true;
+    const googleEmail = userDoc.google_email || (!isAppleRegistered ? userDoc.email : null);
+
     setResponseStatus(event, 200);
     return {
       statusCode: 200,
@@ -59,8 +69,9 @@ export default defineEventHandler(async (event) => {
         phone_number: userDoc.phone_number || null,
         chatbot_enabled: userDoc.chatbot_enabled || false,
         google_id: userDoc.google_id || null,
-        google_email: userDoc.google_email || null,
-        is_google_linked: Boolean(userDoc.google_id),
+        google_email: googleEmail,
+        is_google_linked: isGoogleLinked,
+        is_apple_registered: isAppleRegistered,
         apple_id: userDoc.apple_id || null,
         apple_email: userDoc.apple_email || null,
         is_apple_linked: Boolean(userDoc.apple_id),

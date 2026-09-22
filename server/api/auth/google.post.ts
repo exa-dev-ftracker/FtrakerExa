@@ -74,7 +74,13 @@ export default defineEventHandler(async (event) => {
                 body: { message: "Google email is not verified" },
             };
         }
-        const emailIsUser: User | null = await users.findOne({email: email});
+        const emailIsUser: User | null = await users.findOne({
+            $or: [
+                { google_id: sub },
+                { email: email },
+                { google_email: email }
+            ]
+        });
         if (emailIsUser) {
             // Existing user - link Google ID if not yet linked
             if (!emailIsUser.google_id) {

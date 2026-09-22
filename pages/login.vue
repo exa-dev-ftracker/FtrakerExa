@@ -67,9 +67,15 @@ const submit = async () => {
       error.value = true;
       errorMessage.value = data.body?.message || "Invalid credentials";
     }
-  } catch (err: any) {
+    } catch (err: any) {
     error.value = true;
-    errorMessage.value = "Something went wrong. Please try again.";
+    errorMessage.value =
+      err.response?.data?.body?.message ||
+      err.response?.data?.message ||
+      err.data?.body?.message ||
+      err.data?.message ||
+      err.message ||
+      "Invalid credentials or something went wrong.";
   } finally {
     isLoading.value = false;
   }

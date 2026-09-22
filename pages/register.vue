@@ -67,7 +67,7 @@ const handleSubmit = async () => {
     haveError.value = true;
   }
 
-  if (!haveError.value) {
+    if (!haveError.value) {
     isLoading.value = true;
     try {
       const { passwordConfirmation, ...formdata } = formData;
@@ -78,17 +78,43 @@ const handleSubmit = async () => {
       if (res.data?.statusCode === 201 || res.statusCode === 201) {
         toast.add({
           title: "Success! 🎉",
-          description: "Account created.",
+          description: "Account created successfully. Please login.",
           color: "green",
         });
         return router.push("/login");
       }
     } catch (err: any) {
-      toast.add({
-        title: "Error",
-        description: err.data?.body?.message || "Registration failed",
-        color: "red",
-      });
+      const message =
+        err.response?.data?.body?.message ||
+        err.response?.data?.message ||
+        err.data?.body?.message ||
+        err.data?.message ||
+        err.message ||
+        "Registration failed. Please try again.";
+
+      if (
+        err.response?.status === 409 ||
+        message.toLowerCase().includes("email") ||
+        message.includes("E11000") ||
+        message.includes("duplicate key")
+      ) {
+        error.email = message.includes("E11000")
+          ? "Email is already registered"
+          : message;
+        toast.add({
+          title: "Registration Failed",
+          description: message.includes("E11000")
+            ? "Email is already registered. Please log in or use another email."
+            : message,
+          color: "red",
+        });
+      } else {
+        toast.add({
+          title: "Registration Failed",
+          description: message,
+          color: "red",
+        });
+      }
     } finally {
       isLoading.value = false;
     }
