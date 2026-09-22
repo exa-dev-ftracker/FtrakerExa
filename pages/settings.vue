@@ -284,20 +284,20 @@ const colorOptions = [
         :initial="{ opacity: 0, y: -20 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ duration: 0.8 }"
-        class="header-anim flex justify-between items-end mb-12"
+        class="header-anim flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 sm:mb-12"
       >
         <div class="space-y-1">
           <div class="flex items-center gap-2 text-blue-600 font-black uppercase tracking-[0.2em] text-[10px] mb-2">
             <UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4" />
             System Preferences
           </div>
-          <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Settings <span class="text-blue-600">.</span></h1>
-          <p class="text-gray-500 dark:text-gray-400 font-medium">Manage your account preferences and security.</p>
+          <h1 class="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white tracking-tight">Settings <span class="text-blue-600">.</span></h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-medium">Manage your account preferences and security.</p>
         </div>
         <UButton to="/dashboard" icon="i-heroicons-arrow-left" color="gray" variant="soft" class="rounded-2xl px-6 font-black">Dashboard</UButton>
       </Motion>
       
-      <div class="w-full">
+      <div class="w-full min-w-0">
         <!-- Main Content -->
         <Motion 
           :initial="{ opacity: 0, y: 30 }"
@@ -305,19 +305,19 @@ const colorOptions = [
           :transition="{ duration: 0.8, delay: 0.2 }"
           class="content-anim"
         >
-          <div class="bg-white dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[3rem] p-10 shadow-xl shadow-gray-200/20 dark:shadow-none min-h-[500px]">
+          <div class="bg-white dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-3xl sm:rounded-[3rem] p-5 sm:p-10 shadow-xl shadow-gray-200/20 dark:shadow-none min-h-[500px]">
              
              <!-- Account Section -->
              <div class="space-y-10">
                 <div class="space-y-2">
                    <h2 class="text-2xl font-black text-gray-900 dark:text-white">Profile Identity</h2>
-                   <p class="text-gray-500 font-medium">Welcome back, <span class="text-blue-600">{{ userName }}</span>. Manage your account details here.</p>
+                   <p class="text-gray-500 font-medium">Welcome back, <span class="text-blue-600 break-all">{{ userName }}</span>. Manage your account details here.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-8">
-                   <div class="space-y-2">
+                   <div class="space-y-2 min-w-0">
                       <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Account Email</label>
-                      <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-bold">{{ userEmail }}</div>
+                      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-bold text-sm sm:text-base break-all select-all">{{ userEmail }}</div>
                    </div>
                 </div>
 
@@ -332,7 +332,7 @@ const colorOptions = [
                       icon="i-heroicons-key" 
                       color="primary" 
                       size="xl" 
-                      class="rounded-2xl px-8 font-black" 
+                      class="rounded-2xl px-6 sm:px-8 font-black w-full sm:w-auto justify-center text-sm sm:text-base" 
                       @click="requestPasswordReset" 
                     />
                  </div>
@@ -349,9 +349,9 @@ const colorOptions = [
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                        <!-- Google Account Card -->
-                       <div class="p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-white/5 rounded-3xl flex flex-col justify-between gap-5 transition-all hover:border-blue-500/30">
-                          <div class="flex items-start justify-between gap-4">
-                             <div class="flex items-center gap-3.5">
+                       <div class="p-5 sm:p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-white/5 rounded-3xl flex flex-col justify-between gap-5 transition-all hover:border-blue-500/30 min-w-0">
+                          <div class="flex items-start justify-between gap-4 min-w-0">
+                             <div class="flex items-center gap-3.5 min-w-0 flex-1">
                                 <div class="w-12 h-12 rounded-2xl bg-white dark:bg-gray-700/60 shadow-sm border border-gray-100 dark:border-white/5 flex items-center justify-center shrink-0">
                                    <svg class="w-6 h-6" viewBox="0 0 24 24">
                                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -360,23 +360,23 @@ const colorOptions = [
                                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                                    </svg>
                                 </div>
-                                <div>
-                                   <div class="flex items-center gap-2">
+                                <div class="min-w-0 flex-1">
+                                   <div class="flex items-center gap-2 flex-wrap">
                                       <h4 class="font-black text-gray-900 dark:text-white">Google Account</h4>
                                       <span
                                          v-if="oauthStatus.is_google_linked"
-                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0"
                                       >
                                          Connected
                                       </span>
                                       <span
                                          v-else
-                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0"
                                       >
                                          Not Linked
                                       </span>
                                    </div>
-                                   <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1">
+                                   <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 break-all">
                                       {{ oauthStatus.google_email || (oauthStatus.is_google_linked ? userEmail : "Link Google account for seamless login") }}
                                    </p>
                                 </div>
@@ -385,8 +385,8 @@ const colorOptions = [
 
                           <div>
                              <div v-if="oauthStatus.is_google_linked" class="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3.5 py-2.5 rounded-xl border border-emerald-500/20">
-                                <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
-                                <span>Google account active and linked</span>
+                                <UIcon name="i-heroicons-check-circle" class="w-4 h-4 shrink-0" />
+                                <span class="break-words">Google account active and linked</span>
                              </div>
                              <div v-else class="flex items-center justify-start">
                                 <button
@@ -409,80 +409,80 @@ const colorOptions = [
                        </div>
 
                        <!-- Apple ID Card -->
-                       <div class="p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-white/5 rounded-3xl flex flex-col justify-between gap-5 transition-all hover:border-blue-500/30">
-                          <div class="flex items-start justify-between gap-4">
-                             <div class="flex items-center gap-3.5">
+                       <div class="p-5 sm:p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-white/5 rounded-3xl flex flex-col justify-between gap-5 transition-all hover:border-blue-500/30 min-w-0">
+                          <div class="flex items-start justify-between gap-4 min-w-0">
+                             <div class="flex items-center gap-3.5 min-w-0 flex-1">
                                 <div class="w-12 h-12 rounded-2xl bg-black text-white dark:bg-white dark:text-black shadow-sm flex items-center justify-center shrink-0">
                                    <svg class="w-6 h-6 fill-current" viewBox="0 0 170 170">
                                       <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.66-7.85-11.89-14.43-6.24-9.8-11.01-20.9-14.3-33.3-3.29-12.4-4.94-23.7-4.94-33.9 0-14.65 3.82-26.68 11.45-36.08 7.64-9.4 17.02-14.23 28.16-14.5 5.37.13 11.2 1.44 17.5 3.93 6.3 2.5 10.45 3.82 12.45 3.95 2.57-.27 7.02-1.74 13.35-4.41 6.33-2.67 11.96-3.87 16.89-3.6 12.55.8 22.86 5.57 30.93 14.3-10.98 6.64-16.32 15.7-16.02 27.18.3 9.4 3.95 17.3 10.95 23.7 4.1 3.73 8.84 6.38 14.22 7.95-2.3 6.8-5.06 13.6-8.28 20.4zM119.22 33.64c0-7.3 2.66-14.22 7.98-20.76 5.32-6.54 11.83-10.87 19.53-13-1.07 7.18-3.92 13.9-8.55 20.16-4.63 6.26-10.94 10.8-18.96 13.6z"/>
                                    </svg>
                                 </div>
-                                <div>
-                                   <div class="flex items-center gap-2">
+                                <div class="min-w-0 flex-1">
+                                   <div class="flex items-center gap-2 flex-wrap">
                                       <h4 class="font-black text-gray-900 dark:text-white">Apple ID</h4>
                                       <span
                                          v-if="oauthStatus.is_apple_linked"
-                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0"
                                       >
                                          Connected
                                       </span>
                                       <span
                                          v-else
-                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                         class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0"
                                       >
                                          Not Connected
                                       </span>
                                    </div>
-                                   <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1">
+                                   <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 break-all">
                                       {{ oauthStatus.apple_email || (oauthStatus.is_apple_linked ? "Apple ID active and linked" : "Sign in quickly using your device Apple ID") }}
                                    </p>
                                 </div>
                              </div>
                           </div>
 
-                          <div>
-                             <div v-if="oauthStatus.is_apple_linked" class="flex items-center justify-between gap-3">
-                                <div class="text-xs font-bold text-gray-400">
-                                   Securely connected
-                                </div>
-                                <UButton
-                                   @click="handleUnbindApple"
-                                   :loading="oauthStatus.isUnbindingApple"
-                                   color="red"
-                                   variant="soft"
-                                   icon="i-heroicons-link-slash"
-                                   size="sm"
-                                   class="rounded-xl font-black"
-                                >
-                                   Unbind Apple
-                                </UButton>
-                             </div>
-                             <div v-else>
-                                <button
-                                   type="button"
-                                   @click="handleBindApple"
-                                   :disabled="isAppleLoading"
-                                   class="px-5 py-2.5 bg-black hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black rounded-xl font-black text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
-                                >
-                                   <UIcon
-                                      v-if="isAppleLoading"
-                                      name="i-heroicons-arrow-path"
-                                      class="w-4 h-4 animate-spin"
-                                   />
-                                   <svg
-                                      v-else
-                                      class="w-4 h-4 fill-current"
-                                      viewBox="0 0 170 170"
-                                   >
-                                      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.66-7.85-11.89-14.43-6.24-9.8-11.01-20.9-14.3-33.3-3.29-12.4-4.94-23.7-4.94-33.9 0-14.65 3.82-26.68 11.45-36.08 7.64-9.4 17.02-14.23 28.16-14.5 5.37.13 11.2 1.44 17.5 3.93 6.3 2.5 10.45 3.82 12.45 3.95 2.57-.27 7.02-1.74 13.35-4.41 6.33-2.67 11.96-3.87 16.89-3.6 12.55.8 22.86 5.57 30.93 14.3-10.98 6.64-16.32 15.7-16.02 27.18.3 9.4 3.95 17.3 10.95 23.7 4.1 3.73 8.84 6.38 14.22 7.95-2.3 6.8-5.06 13.6-8.28 20.4zM119.22 33.64c0-7.3 2.66-14.22 7.98-20.76 5.32-6.54 11.83-10.87 19.53-13-1.07 7.18-3.92 13.9-8.55 20.16-4.63 6.26-10.94 10.8-18.96 13.6z"/>
-                                   </svg>
-                                   <span>{{ isAppleLoading ? "Connecting..." : "Bind Apple ID" }}</span>
-                                </button>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                 </div>
+                           <div>
+                              <div v-if="oauthStatus.is_apple_linked" class="flex items-center justify-between gap-3">
+                                 <div class="text-xs font-bold text-gray-400">
+                                    Securely connected
+                                 </div>
+                                 <UButton
+                                    @click="handleUnbindApple"
+                                    :loading="oauthStatus.isUnbindingApple"
+                                    color="red"
+                                    variant="soft"
+                                    icon="i-heroicons-link-slash"
+                                    size="sm"
+                                    class="rounded-xl font-black"
+                                 >
+                                    Unbind Apple
+                                 </UButton>
+                              </div>
+                              <div v-else>
+                                 <button
+                                    type="button"
+                                    @click="handleBindApple"
+                                    :disabled="isAppleLoading"
+                                    class="px-5 py-2.5 bg-black hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black rounded-xl font-black text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                                 >
+                                    <UIcon
+                                       v-if="isAppleLoading"
+                                       name="i-heroicons-arrow-path"
+                                       class="w-4 h-4 animate-spin"
+                                    />
+                                    <svg
+                                       v-else
+                                       class="w-4 h-4 fill-current"
+                                       viewBox="0 0 170 170"
+                                    >
+                                       <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.66-7.85-11.89-14.43-6.24-9.8-11.01-20.9-14.3-33.3-3.29-12.4-4.94-23.7-4.94-33.9 0-14.65 3.82-26.68 11.45-36.08 7.64-9.4 17.02-14.23 28.16-14.5 5.37.13 11.2 1.44 17.5 3.93 6.3 2.5 10.45 3.82 12.45 3.95 2.57-.27 7.02-1.74 13.35-4.41 6.33-2.67 11.96-3.87 16.89-3.6 12.55.8 22.86 5.57 30.93 14.3-10.98 6.64-16.32 15.7-16.02 27.18.3 9.4 3.95 17.3 10.95 23.7 4.1 3.73 8.84 6.38 14.22 7.95-2.3 6.8-5.06 13.6-8.28 20.4zM119.22 33.64c0-7.3 2.66-14.22 7.98-20.76 5.32-6.54 11.83-10.87 19.53-13-1.07 7.18-3.92 13.9-8.55 20.16-4.63 6.26-10.94 10.8-18.96 13.6z"/>
+                                    </svg>
+                                    <span>{{ isAppleLoading ? "Connecting..." : "Bind Apple ID" }}</span>
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
 
                  <!-- Category Management -->
                  <div class="pt-8 border-t border-gray-100 dark:border-white/5 space-y-6">
