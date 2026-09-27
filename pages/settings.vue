@@ -266,6 +266,45 @@ const deleteCategory = async (cat: Category) => {
   }
 };
 
+// Delete Account (Apple App Store Guideline 5.1.1(v) Compliant)
+const isDeleteModalOpen = ref(false);
+const isDeletingAccount = ref(false);
+const deleteConfirmText = ref("");
+
+const confirmDeleteAccount = async () => {
+  if (deleteConfirmText.value !== "DELETE") {
+    toast.add({
+      title: "Confirmation Required",
+      description: 'Please type "DELETE" to confirm account deletion.',
+      color: "red",
+    });
+    return;
+  }
+
+  isDeletingAccount.value = true;
+  try {
+    const res: any = await ($axios as any).delete("/api/user/account");
+    toast.add({
+      title: "Account Deleted",
+      description: res.data?.body?.message || "Your account has been deleted permanently.",
+      color: "green",
+    });
+    isDeleteModalOpen.value = false;
+    store.logout();
+    const cookie = useCookie("jwt");
+    cookie.value = null;
+    await navigateTo("/login");
+  } catch (err: any) {
+    toast.add({
+      title: "Delete Failed",
+      description: err.response?.data?.body?.message || "Failed to delete account. Please try again.",
+      color: "red",
+    });
+  } finally {
+    isDeletingAccount.value = false;
+  }
+};
+
 const colorOptions = [
   "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
   "#ec4899", "#f43f5e", "#ef4444", "#f97316",
@@ -551,6 +590,36 @@ const colorOptions = [
                        </div>
                     </div>
                  </div>
+
+                 <!-- Danger Zone / Delete Account (Apple App Store Guideline 5.1.1(v) Compliant) -->
+                 <div class="pt-8 border-t border-red-200 dark:border-red-900/30 space-y-6">
+                    <div class="space-y-1">
+                       <h3 class="text-lg font-black text-red-600 dark:text-red-400 flex items-center gap-2">
+                          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-600" />
+                          Danger Zone
+                       </h3>
+                       <p class="text-gray-500 text-sm font-medium">Permanently delete your account and all associated financial records.</p>
+                    </div>
+
+                    <div class="p-5 sm:p-6 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                       <div class="space-y-1">
+                          <p class="font-bold text-gray-900 dark:text-white">Delete Account Permanently</p>
+                          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                             Once deleted, your account and all associated transactions cannot be recovered. In compliance with Apple App Store Guidelines, all personal data will be completely wiped from our servers.
+                          </p>
+                       </div>
+                       <UButton
+                          @click="isDeleteModalOpen = true"
+                          color="red"
+                          variant="solid"
+                          icon="i-heroicons-trash"
+                          size="md"
+                          class="rounded-xl font-black shrink-0"
+                       >
+                          Delete Account
+                       </UButton>
+                    </div>
+                 </div>
               </div>
 
            </div>
@@ -657,6 +726,67 @@ const colorOptions = [
              </div>
           </UCard>
        </UModal>
+
+       <!-- Delete Account Confirmation Modal (Apple App Store Guideline 5.1.1(v) Compliant) -->
+       <UModal v-model="isDeleteModalOpen">
+          <UCard
+             :ui="{
+                ring: 'ring-2 ring-red-200 dark:ring-red-900/50',
+                divide: 'divide-y divide-gray-200 dark:divide-gray-800',
+                body: { padding: 'px-6 py-6' },
+                header: { padding: 'px-6 py-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/40 dark:to-orange-950/20' },
+             }"
+          >
+             <template #header>
+                <div class="flex items-center justify-between">
+                   <div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-lg">
+                      <UIcon name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
+                      <h3>Delete Account Confirmation</h3>
+                   </div>
+                   <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1" @click="isDeleteModalOpen = false" />
+                </div>
+             </template>
+             <div class="space-y-4">
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                   Are you sure you want to permanently delete your account? This action is compliant with Apple App Store Guidelines and will immediately erase:
+                </p>
+                <ul class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 space-y-1.5 list-disc list-inside">
+                   <li>All income and expense transactions</li>
+                   <li>Custom categories and preferences</li>
+                   <li>Active sessions and security credentials</li>
+                </ul>
+                <div class="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+                   ⚠️ This action is irreversible. To confirm, please type <span class="font-bold underline">DELETE</span> below:
+                </div>
+                <UInput
+                   v-model="deleteConfirmText"
+                   placeholder='Type "DELETE" to confirm'
+                   size="lg"
+                   class="font-bold"
+                />
+                <div class="flex gap-3 pt-2">
+                   <UButton
+                      @click="confirmDeleteAccount"
+                      color="red"
+                      variant="solid"
+                      label="Yes, Delete My Account"
+                      size="lg"
+                      class="flex-1 justify-center font-bold"
+                      :loading="isDeletingAccount"
+                      :disabled="deleteConfirmText !== 'DELETE'"
+                   />
+                   <UButton
+                      @click="isDeleteModalOpen = false"
+                      color="gray"
+                      variant="soft"
+                      label="Cancel"
+                      size="lg"
+                      class="flex-1 justify-center font-bold"
+                    />
+                 </div>
+              </div>
+           </UCard>
+        </UModal>
     </div>
   </div>
 </template>
