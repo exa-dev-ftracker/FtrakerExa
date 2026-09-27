@@ -37,9 +37,9 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Fetch user details including OAuth connection info
+    // Fetch user details including OAuth connection info and timezone
     const userDoc = await Users.findById(userId).select(
-      'phone_number chatbot_enabled name email google_id google_email apple_id apple_email password'
+      'phone_number chatbot_enabled name email google_id google_email apple_id apple_email password timezone'
     );
 
     if (!userDoc) {
@@ -68,6 +68,7 @@ export default defineEventHandler(async (event) => {
         email: userDoc.email,
         phone_number: userDoc.phone_number || null,
         chatbot_enabled: userDoc.chatbot_enabled || false,
+        timezone: userDoc.timezone || "UTC",
         google_id: userDoc.google_id || null,
         google_email: googleEmail,
         is_google_linked: isGoogleLinked,

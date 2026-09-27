@@ -24,6 +24,43 @@ const oauthStatus = reactive({
   isBindingGoogle: false,
 });
 
+const currentTimezone = ref("UTC");
+const isUpdatingTimezone = ref(false);
+
+const timezoneOptions = [
+  { label: "UTC (Coordinated Universal Time)", value: "UTC" },
+  { label: "Asia/Jakarta (WIB - UTC+7)", value: "Asia/Jakarta" },
+  { label: "Asia/Makassar (WITA - UTC+8)", value: "Asia/Makassar" },
+  { label: "Asia/Jayapura (WIT - UTC+9)", value: "Asia/Jayapura" },
+  { label: "Asia/Singapore (SGT - UTC+8)", value: "Asia/Singapore" },
+  { label: "Asia/Tokyo (JST - UTC+9)", value: "Asia/Tokyo" },
+  { label: "Europe/London (GMT/BST)", value: "Europe/London" },
+  { label: "America/New_York (EST/EDT)", value: "America/New_York" },
+  { label: "America/Los_Angeles (PST/PDT)", value: "America/Los_Angeles" },
+];
+
+const updateTimezone = async () => {
+  isUpdatingTimezone.value = true;
+  try {
+    await ($axios as any).patch("/api/user/timezone", {
+      timezone: currentTimezone.value,
+    });
+    toast.add({
+      title: "Timezone Updated",
+      description: `Default timezone set to ${currentTimezone.value}.`,
+      color: "green",
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Update Failed",
+      description: err.response?.data?.body?.message || "Failed to update timezone.",
+      color: "red",
+    });
+  } finally {
+    isUpdatingTimezone.value = false;
+  }
+};
+
 useHead({
   title: "Settings - FTraker",
   meta: [{ name: "description", content: "Manage your account settings" }],
@@ -41,6 +78,9 @@ const fetchOAuthSettings = async () => {
       oauthStatus.google_email = data.google_email;
       oauthStatus.is_apple_linked = Boolean(data.is_apple_linked);
       oauthStatus.apple_email = data.apple_email;
+      if (data.timezone) {
+        currentTimezone.value = data.timezone;
+      }
     }
   } catch (err) {
     console.error("Failed to fetch OAuth settings:", err);
@@ -353,10 +393,34 @@ const colorOptions = [
                    <p class="text-gray-500 font-medium">Welcome back, <span class="text-blue-600 break-all">{{ userName }}</span>. Manage your account details here.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div class="space-y-2 min-w-0">
                       <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Account Email</label>
                       <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/5 rounded-2xl text-gray-900 dark:text-white font-bold text-sm sm:text-base break-all select-all">{{ userEmail }}</div>
+                   </div>
+                   <div class="space-y-2 min-w-0">
+                      <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Default Timezone</label>
+                      <div class="flex gap-2">
+                         <USelectMenu
+                            v-model="currentTimezone"
+                            :options="timezoneOptions"
+                            value-attribute="value"
+                            option-attribute="label"
+                            size="xl"
+                            class="flex-1 font-bold rounded-2xl"
+                            @change="updateTimezone"
+                         />
+                         <UButton
+                            @click="updateTimezone"
+                            :loading="isUpdatingTimezone"
+                            color="primary"
+                            variant="solid"
+                            size="xl"
+                            icon="i-heroicons-check"
+                            class="rounded-2xl px-4 font-bold shrink-0"
+                            title="Save Timezone"
+                         />
+                      </div>
                    </div>
                 </div>
 

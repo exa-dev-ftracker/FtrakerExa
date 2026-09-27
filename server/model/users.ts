@@ -15,6 +15,7 @@ export interface User extends Document {
     google_email?: string | null;
     apple_id?: string | null;
     apple_email?: string | null;
+    timezone?: string;
 }
 
 const userSchema = new Schema<User>({
@@ -28,6 +29,7 @@ const userSchema = new Schema<User>({
     google_email: { type: String, default: null },
     apple_id: { type: String, default: null, sparse: true },
     apple_email: { type: String, default: null },
+    timezone: { type: String, default: "UTC" },
 });
 
 export default model<User>('User', userSchema);
