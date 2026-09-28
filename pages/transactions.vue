@@ -193,6 +193,10 @@ const resetAndRefresh = async () => {
 
 const getDateKey = (dateStr: string) => {
   if (!dateStr) return "";
+  const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
+  }
   const tz = store.user?.timezone || undefined;
   try {
     return new Intl.DateTimeFormat("en-CA", {
@@ -210,6 +214,29 @@ const formatDateHeading = (dateKey: string) => {
   const parts = dateKey.split("-").map(Number);
   if (parts.length === 3) {
     const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    const tz = store.user?.timezone || undefined;
+    let todayKey = "";
+    let yesterdayKey = "";
+    try {
+      const now = new Date();
+      todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(now);
+      const yesterday = new Date(now.getTime() - 86400000);
+      yesterdayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(yesterday);
+    } catch (_) {}
+
+    const formattedDate = localDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    if (dateKey === todayKey) {
+      return `Today, ${formattedDate}`;
+    }
+    if (dateKey === yesterdayKey) {
+      return `Yesterday, ${formattedDate}`;
+    }
+
     return localDate.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -224,7 +251,7 @@ const formatDateHeading = (dateKey: string) => {
 const transactionsByDate = computed(() => {
   const groups: Record<string, Transaction[]> = {};
   for (const t of transactionsList.value) {
-    const rawDate = (t as any).date || t.createdAt;
+    const rawDate = t.date || t.createdAt;
     const dateKey = getDateKey(rawDate);
     if (!groups[dateKey]) {
       groups[dateKey] = [];

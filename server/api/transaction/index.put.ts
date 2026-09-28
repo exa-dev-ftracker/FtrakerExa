@@ -68,10 +68,10 @@ export default defineEventHandler(async (events) => {
         transaction.type = type;
         transaction.description = description;
         transaction.category = category || undefined;
-        const txDate = date ? new Date(date) : (createdAt ? new Date(createdAt) : undefined);
-        if (txDate) {
-            transaction.createdAt = txDate;
-            transaction.date = txDate;
+        if (date) {
+            transaction.date = new Date(date);
+        } else if (createdAt) {
+            transaction.date = new Date(createdAt);
         }
         await transaction.save();
         broadcastToUser(userData.id, "transaction:updated", { _id, _senderClientId: getHeader(events, "x-client-id") || "" });

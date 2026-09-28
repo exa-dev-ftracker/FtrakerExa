@@ -58,9 +58,9 @@ export default defineEventHandler(async (events) => {
             amount,
             type,
             description,
-            createdAt: txDate,
             date: txDate,
             category: category || undefined,
+            ...(createdAt ? { createdAt: new Date(createdAt) } : {}),
         });
         await transaction.save();
         broadcastToUser(userData.id, "transaction:created", { _id: transaction._id, _senderClientId: getHeader(events, "x-client-id") || "" });

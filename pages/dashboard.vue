@@ -87,6 +87,57 @@ const currency = (val: number) => {
     maximumFractionDigits: 0,
   }).format(val);
 };
+
+const formatTransactionDate = (t: any): string => {
+  if (!t) return "";
+  const rawDate = t.date || t.createdAt;
+  if (!rawDate) return "";
+
+  // 1. Resolve calendar date
+  let calDate: Date;
+  const match = String(t.date || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    calDate = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  } else {
+    calDate = new Date(rawDate);
+  }
+
+  // 2. Compare with Today / Yesterday in user timezone
+  const tz = store.user?.timezone || undefined;
+  let todayKey = "";
+  let yesterdayKey = "";
+  try {
+    const now = new Date();
+    todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(now);
+    const yesterday = new Date(now.getTime() - 86400000);
+    yesterdayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(yesterday);
+  } catch (_) {}
+
+  const calKey = match ? `${match[1]}-${match[2]}-${match[3]}` : calDate.toISOString().split("T")[0];
+  let datePart = "";
+  if (calKey === todayKey) {
+    datePart = "Today";
+  } else if (calKey === yesterdayKey) {
+    datePart = "Yesterday";
+  } else {
+    datePart = calDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  // 3. Format created time
+  if (t.createdAt) {
+    try {
+      const timePart = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(t.createdAt));
+      return `${datePart}, ${timePart}`;
+    } catch (_) {}
+  }
+
+  return datePart;
+};
 </script>
 
 <template>
@@ -325,14 +376,7 @@ const currency = (val: number) => {
                         {{ t.description }}
                       </p>
                       <p class="text-xs font-bold text-slate-400">
-                        {{
-                          new Date((t as any).date || t.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            timeZone: store.user?.timezone || undefined,
-                          })
-                        }}
+                        {{ formatTransactionDate(t) }}
                       </p>
                     </div>
                   </div>

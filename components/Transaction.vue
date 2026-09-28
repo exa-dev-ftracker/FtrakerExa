@@ -2,6 +2,7 @@
 import type { Category, Transaction } from "~/types";
 import { displayTransactionType } from "~/types";
 
+const store = useDefaultStore();
 const toast = useToast();
 const props = defineProps<{ data: Transaction; loading?: boolean }>();
 const emit = defineEmits(["edit", "delete"]);
@@ -12,6 +13,38 @@ const icon = computed(() =>
     ? "i-heroicons-arrow-up-right-20-solid"
     : "i-heroicons-arrow-down-left-20-solid",
 );
+
+const formattedCreatedTime = computed(() => {
+  const ca = props.data?.createdAt;
+  if (!ca) return "";
+  try {
+    const tz = store.user?.timezone || undefined;
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(ca));
+  } catch (e) {
+    const d = new Date(ca);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+});
+
+const formattedCreatedTooltip = computed(() => {
+  const ca = props.data?.createdAt;
+  if (!ca) return "";
+  try {
+    const tz = store.user?.timezone || undefined;
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(ca));
+  } catch (e) {
+    return "";
+  }
+});
 
 const categoryData = computed<Category>(() => {
   const c = props.data?.category;
@@ -28,14 +61,13 @@ const categoryData = computed<Category>(() => {
   };
 });
 
-
 const action = [
   [
     {
       label: "Edit Transaction",
       icon: "i-heroicons-pencil-square",
       click: () =>
-        emit("edit", props.data.createdAt.split("T")[0], props.data._id),
+        emit("edit", (props.data.date || props.data.createdAt).split("T")[0], props.data._id),
     },
   ],
   [
@@ -111,6 +143,14 @@ const action = [
                 class="w-3 h-3"
               />
               {{ categoryData.name }}
+            </span>
+            <span
+              v-if="formattedCreatedTime"
+              class="text-[10px] font-semibold px-2 py-0.5 rounded-lg inline-flex items-center gap-1 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200/50 dark:border-white/5 cursor-help"
+              :title="formattedCreatedTooltip ? 'Created at ' + formattedCreatedTooltip : undefined"
+            >
+              <UIcon name="i-heroicons-clock" class="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              {{ formattedCreatedTime }}
             </span>
           </div>
         </div>
