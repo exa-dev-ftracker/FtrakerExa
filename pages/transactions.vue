@@ -191,11 +191,41 @@ const resetAndRefresh = async () => {
   ]);
 };
 
+const getDateKey = (dateStr: string) => {
+  if (!dateStr) return "";
+  const tz = store.user?.timezone || undefined;
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(dateStr));
+  } catch (e) {
+    return new Date(dateStr).toISOString().split("T")[0];
+  }
+};
+
+const formatDateHeading = (dateKey: string) => {
+  const parts = dateKey.split("-").map(Number);
+  if (parts.length === 3) {
+    const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    return localDate.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  return dateKey;
+};
+
 // Group transactions by date for aesthetic daily breakdown
 const transactionsByDate = computed(() => {
   const groups: Record<string, Transaction[]> = {};
   for (const t of transactionsList.value) {
-    const dateKey = new Date(t.createdAt).toISOString().split("T")[0];
+    const rawDate = (t as any).date || t.createdAt;
+    const dateKey = getDateKey(rawDate);
     if (!groups[dateKey]) {
       groups[dateKey] = [];
     }
@@ -698,14 +728,7 @@ watch(infiniteScrollSentinel, (newEl) => {
               <div class="flex items-center gap-2.5">
                 <div class="w-1.5 h-6 bg-blue-600 dark:bg-blue-500 rounded-full"></div>
                 <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white tracking-tight">
-                  {{
-                    new Date(dateKey).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  }}
+                  {{ formatDateHeading(dateKey) }}
                 </h3>
                 <span class="text-xs font-bold text-gray-400 dark:text-gray-500">
                   ({{ group.length }})

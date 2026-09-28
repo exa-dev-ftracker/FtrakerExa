@@ -37,6 +37,7 @@ export default defineEventHandler(async (events) => {
             type: string;
             description: string;
             createdAt?: string;
+            date?: string;
             category?: string;
             _id: string;
         }>(events);
@@ -47,7 +48,7 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt, category, _id} = body;
+        const {amount, type, description, createdAt, date, category, _id} = body;
         const transaction = await transactions.findOne({_id});
         if (!transaction) {
             setResponseStatus(events, 404);
@@ -67,9 +68,11 @@ export default defineEventHandler(async (events) => {
         transaction.type = type;
         transaction.description = description;
         transaction.category = category || undefined;
-        transaction.createdAt = createdAt
-            ? new Date(createdAt)
-            : transaction.createdAt;
+        const txDate = date ? new Date(date) : (createdAt ? new Date(createdAt) : undefined);
+        if (txDate) {
+            transaction.createdAt = txDate;
+            transaction.date = txDate;
+        }
         await transaction.save();
         broadcastToUser(userData.id, "transaction:updated", { _id, _senderClientId: getHeader(events, "x-client-id") || "" });
         setResponseStatus(events, 200);

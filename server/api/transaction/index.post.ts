@@ -41,6 +41,7 @@ export default defineEventHandler(async (events) => {
             type: string;
             description: string;
             createdAt?: string;
+            date?: string;
             category?: string;
         }>(events);
         if (!body || !body.category) {
@@ -50,13 +51,15 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt, category} = body;
+        const {amount, type, description, createdAt, date, category} = body;
+        const txDate = date ? new Date(date) : (createdAt ? new Date(createdAt) : new Date());
         const transaction = new transactions({
             user: userData.id,
             amount,
             type,
             description,
-            createdAt,
+            createdAt: txDate,
+            date: txDate,
             category: category || undefined,
         });
         await transaction.save();
