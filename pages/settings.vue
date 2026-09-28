@@ -400,27 +400,17 @@ const colorOptions = [
                    </div>
                    <div class="space-y-2 min-w-0">
                       <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Default Timezone</label>
-                      <div class="flex gap-2">
-                         <USelectMenu
-                            v-model="currentTimezone"
-                            :options="timezoneOptions"
-                            value-attribute="value"
-                            option-attribute="label"
-                            size="xl"
-                            class="flex-1 font-bold rounded-2xl"
-                            @change="updateTimezone"
-                         />
-                         <UButton
-                            @click="updateTimezone"
-                            :loading="isUpdatingTimezone"
-                            color="primary"
-                            variant="solid"
-                            size="xl"
-                            icon="i-heroicons-check"
-                            class="rounded-2xl px-4 font-bold shrink-0"
-                            title="Save Timezone"
-                         />
-                      </div>
+                      <USelectMenu
+                         v-model="currentTimezone"
+                         :options="timezoneOptions"
+                         value-attribute="value"
+                         option-attribute="label"
+                         size="xl"
+                         :loading="isUpdatingTimezone"
+                         :disabled="isUpdatingTimezone"
+                         class="w-full font-bold rounded-2xl"
+                         @change="updateTimezone"
+                      />
                    </div>
                 </div>
 
