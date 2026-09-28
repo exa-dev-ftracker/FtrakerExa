@@ -41,7 +41,15 @@ const largestTransaction = computed(() => data.value?.body?.metrics?.largestTran
 const incomeByCategory = computed(() => data.value?.body?.incomeByCategory ?? []);
 const expenseByCategory = computed(() => data.value?.body?.expenseByCategory ?? []);
 
+const store = useDefaultStore();
 watch(selectedView, () => refresh());
+watch(
+  () => store.refreshTrigger,
+  () => refresh()
+);
+onMounted(() => {
+  refresh();
+});
 </script>
 
 <template>

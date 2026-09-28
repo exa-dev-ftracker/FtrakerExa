@@ -45,6 +45,7 @@ const { data, status, error, refresh } = useAsyncData<DashboardResponse>(
 const isHydrated = ref(false);
 onMounted(() => {
   isHydrated.value = true;
+  refresh();
 });
 
 const loading = computed(() => {
