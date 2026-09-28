@@ -57,6 +57,36 @@ const getTodayInTimezone = (tz?: string): string => {
   }
 };
 
+const toUtcIsoString = (dateInput: string): string => {
+  if (!dateInput) return new Date().toISOString();
+  
+  const todayStr = getTodayInTimezone();
+  // If it's today's date and creating a fresh transaction, record current exact UTC timestamp
+  if (dateInput === todayStr && !props.isEdit) {
+    return new Date().toISOString();
+  }
+
+  // Convert date in user timezone to UTC ISO string
+  const tz = store.user?.timezone;
+  try {
+    const parts = dateInput.split("-").map(Number);
+    if (parts.length === 3) {
+      const now = new Date();
+      // Anchor at current time on selected date
+      const testUtc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()));
+      if (!tz || tz === "UTC") {
+        return testUtc.toISOString();
+      }
+      const invDate = new Date(testUtc.toLocaleString("en-US", { timeZone: tz }));
+      const diff = testUtc.getTime() - invDate.getTime();
+      return new Date(testUtc.getTime() + diff).toISOString();
+    }
+  } catch (e) {
+    // fallback
+  }
+  return new Date(`${dateInput}T12:00:00.000Z`).toISOString();
+};
+
 const formData = reactive({
   createdAt: getTodayInTimezone(),
   description: "",
@@ -69,7 +99,7 @@ const formData = reactive({
 const formattedAmount = ref("Rp 0");
 
 const onInput = (event: InputEvent) => {
-  const value = (event.target as HTMLInputElement).value.replace(/[^\d]/g, "");
+  const value = event.target.value.replace(/[^\d]/g, "");
   formData.amount = parseInt(value) || 0;
   formattedAmount.value = currency(formData.amount);
 };
@@ -89,14 +119,11 @@ const onSubmit = async () => {
 
   try {
     await schema.parseAsync(formData);
-    const calendarDate = `${formData.createdAt}T00:00:00.000Z`;
-    const creationTimestamp = props.isEdit && props.data?.createdAt
-      ? props.data.createdAt
-      : new Date().toISOString();
+    const utcDateStr = toUtcIsoString(formData.createdAt);
     const payload = {
       ...formData,
-      createdAt: creationTimestamp,
-      date: calendarDate,
+      createdAt: utcDateStr,
+      date: utcDateStr,
     };
     if (props.isEdit && props.data) {
       payload._id = props.data._id;
@@ -160,23 +187,17 @@ watch(
   () => props.data,
   (newValue) => {
     if (newValue) {
-      if ((newValue as any).date) {
-        const match = String((newValue as any).date).match(/^(\d{4})-(\d{2})-(\d{2})/);
-        formData.createdAt = match ? `${match[1]}-${match[2]}-${match[3]}` : (newValue as any).date.split("T")[0];
-      } else if (newValue.createdAt) {
-        try {
-          const timeZone = store.user?.timezone || undefined;
-          formData.createdAt = new Intl.DateTimeFormat("en-CA", {
-            timeZone,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          }).format(new Date(newValue.createdAt));
-        } catch (e) {
-          formData.createdAt = newValue.createdAt.split("T")[0];
-        }
-      } else {
-        formData.createdAt = getTodayInTimezone();
+      const rawDate = (newValue as any).date || newValue.createdAt;
+      try {
+        const timeZone = store.user?.timezone || undefined;
+        formData.createdAt = new Intl.DateTimeFormat("en-CA", {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(rawDate));
+      } catch (e) {
+        formData.createdAt = rawDate ? rawDate.split("T")[0] : getTodayInTimezone();
       }
       formData.description = newValue.description;
       let parsedType =

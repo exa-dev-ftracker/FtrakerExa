@@ -20,7 +20,6 @@ export interface Transaction {
     amount: number
     description: string
     createdAt: string
-    date?: string
     _id: string
     updatedAt: string
     category?: Category | string | null
