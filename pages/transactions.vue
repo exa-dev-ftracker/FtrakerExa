@@ -193,6 +193,9 @@ const resetAndRefresh = async () => {
 
 const getDateKey = (dateStr: string) => {
   if (!dateStr) return "";
+  if (dateStr.includes("T00:00:00")) {
+    return dateStr.split("T")[0];
+  }
   const tz = store.user?.timezone || undefined;
   try {
     return new Intl.DateTimeFormat("en-CA", {
@@ -224,8 +227,7 @@ const formatDateHeading = (dateKey: string) => {
 const transactionsByDate = computed(() => {
   const groups: Record<string, Transaction[]> = {};
   for (const t of transactionsList.value) {
-    const rawDate = (t as any).date || t.createdAt;
-    const dateKey = getDateKey(rawDate);
+    const dateKey = getDateKey(t.createdAt);
     if (!groups[dateKey]) {
       groups[dateKey] = [];
     }
