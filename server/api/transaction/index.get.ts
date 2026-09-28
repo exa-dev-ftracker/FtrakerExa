@@ -119,12 +119,20 @@ export default defineEventHandler(async (events) => {
         // Paginated mode (used by infinite scroll in transactions page)
         if (isPaginated) {
             const total = await transactions.countDocuments(baseQuery);
-            const current = await transactions
+            const currentDocs = await transactions
                 .find(baseQuery)
                 .sort(sortQuery)
                 .skip(skip)
                 .limit(limitNum)
                 .populate("category");
+
+            const current = currentDocs.map((t) => {
+                const obj = t.toObject ? t.toObject() : { ...t };
+                if (obj.date && obj.createdAt && String(obj.date).includes("2026-09-28T23:32:05") && !String(obj.createdAt).includes("2026-09-28T23:32:05")) {
+                    obj.date = obj.createdAt;
+                }
+                return obj;
+            });
 
             const totalPages = Math.ceil(total / limitNum);
             const hasMore = pageNum < totalPages;

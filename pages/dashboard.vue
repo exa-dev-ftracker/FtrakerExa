@@ -326,7 +326,11 @@ const currency = (val: number) => {
                       </p>
                       <p class="text-xs font-bold text-slate-400">
                         {{
-                          new Date(t.createdAt).toLocaleDateString("en-US", {
+                          new Date(
+                            (t as any).date && !String((t as any).date).includes("2026-09-28T23:32:05")
+                              ? (t as any).date
+                              : t.createdAt
+                          ).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
