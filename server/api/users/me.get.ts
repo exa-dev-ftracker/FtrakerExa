@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import Users from "~/server/model/users";
 
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig();
@@ -14,15 +15,16 @@ export default defineEventHandler(async (event) => {
   try {
     const decoded = jwt.verify(token, runtimeConfig.secretJwtKey) as { email: string; name: string; id: string };
     
-    // Return user data from decoded token or Redis if needed
-    // For now, token payload is enough
+    const userDoc = await Users.findById(decoded.id).select("email name timezone");
+
     return {
       statusCode: 200,
       body: {
         user: {
-          email: decoded.email,
-          name: decoded.name,
-          id: decoded.id
+          email: userDoc?.email || decoded.email,
+          name: userDoc?.name || decoded.name,
+          id: decoded.id,
+          timezone: userDoc?.timezone || "UTC",
         }
       }
     };

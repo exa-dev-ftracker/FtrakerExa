@@ -5,7 +5,7 @@ export const useDefaultStore = defineStore("default", {
     return {
       isAuth: false,
       jwt: "",
-      user: null as { email: string; name: string; id: string } | null,
+      user: null as { email: string; name: string; id: string; timezone?: string } | null,
       isTransactionModalOpen: false,
       transactionToEdit: null as Transaction | null,
       refreshTrigger: 0,
@@ -17,7 +17,7 @@ export const useDefaultStore = defineStore("default", {
       this.isAuth = true;
       this.jwt = jwt;
     },
-    setUser(user: { email: string; name: string; id: string } | null) {
+    setUser(user: { email: string; name: string; id: string; timezone?: string } | null) {
       this.user = user;
     },
     logout() {

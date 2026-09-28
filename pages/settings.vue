@@ -45,6 +45,12 @@ const updateTimezone = async () => {
     await ($axios as any).patch("/api/user/timezone", {
       timezone: currentTimezone.value,
     });
+    if (store.user) {
+      store.setUser({
+        ...store.user,
+        timezone: currentTimezone.value,
+      });
+    }
     toast.add({
       title: "Timezone Updated",
       description: `Default timezone set to ${currentTimezone.value}.`,

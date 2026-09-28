@@ -37,8 +37,28 @@ const isOpen = computed({
   },
 });
 
+const getTodayInTimezone = (tz?: string): string => {
+  try {
+    const timeZone =
+      tz ||
+      store.user?.timezone ||
+      (typeof Intl !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : "UTC");
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(new Date());
+  } catch (e) {
+    return new Date().toLocaleDateString("en-CA");
+  }
+};
+
 const formData = reactive({
-  createdAt: `${new Date().toISOString().split("T")[0]}`,
+  createdAt: getTodayInTimezone(),
   description: "",
   type: "",
   amount: 0,
@@ -118,7 +138,7 @@ const onSubmit = async () => {
 };
 
 const resetForm = () => {
-  formData.createdAt = `${new Date().toISOString().split("T")[0]}`;
+  formData.createdAt = getTodayInTimezone();
   formData.description = "";
   formData.type = "";
   formData.amount = 0;
@@ -157,6 +177,9 @@ watch(
   (newValue) => {
     if (newValue && store.categories.length === 0) {
       store.fetchCategories();
+    }
+    if (newValue && !props.data) {
+      formData.createdAt = getTodayInTimezone();
     }
     if (!newValue) {
       resetForm();
