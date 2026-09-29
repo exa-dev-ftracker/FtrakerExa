@@ -130,8 +130,8 @@ definePageMeta({
             </p>
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl">
               <p class="text-gray-700 dark:text-gray-300 font-black">FTraker Support</p>
-              <p class="text-gray-600 dark:text-gray-400">Email: support@ftraker.app</p>
-              <p class="text-gray-600 dark:text-gray-400">Website: www.ftraker.app</p>
+              <p class="text-gray-600 dark:text-gray-400">Email: support@eka-dev.cloud</p>
+              <p class="text-gray-600 dark:text-gray-400">Website: https://f-tracker.eka-dev.cloud</p>
             </div>
           </Motion>
         </div>

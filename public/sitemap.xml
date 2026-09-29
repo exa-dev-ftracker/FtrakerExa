@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ftraker.app/</loc>
+    <loc>https://f-tracker.eka-dev.cloud/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ftraker.app/login</loc>
+    <loc>https://f-tracker.eka-dev.cloud/login</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ftraker.app/register</loc>
+    <loc>https://f-tracker.eka-dev.cloud/register</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ftraker.app/privacy-policy</loc>
+    <loc>https://f-tracker.eka-dev.cloud/support</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://f-tracker.eka-dev.cloud/privacy-policy</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ftraker.app/terms-of-service</loc>
+    <loc>https://f-tracker.eka-dev.cloud/terms-of-service</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ftraker.app/cookie-policy</loc>
+    <loc>https://f-tracker.eka-dev.cloud/cookie-policy</loc>
     <priority>0.5</priority>
   </url>
 </urlset>

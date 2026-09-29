@@ -216,7 +216,7 @@ if (!jwt.value) {
               <div
                 class="mx-auto bg-white/5 px-4 py-1 rounded-md text-[10px] text-white/30 font-bold"
               >
-                ftraker.app/dashboard
+                f-tracker.eka-dev.cloud/dashboard
               </div>
             </div>
             <div class="mt-10 p-8 grid grid-cols-12 gap-8 h-full bg-[#030712]">
@@ -645,6 +645,13 @@ if (!jwt.value) {
                   to="/cookie-policy"
                   class="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-white transition-colors font-black text-sm"
                   >Cookie Policy</NuxtLink
+                >
+              </li>
+              <li>
+                <NuxtLink
+                  to="/support"
+                  class="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-white transition-colors font-black text-sm"
+                  >Help & Support</NuxtLink
                 >
               </li>
             </ul>
