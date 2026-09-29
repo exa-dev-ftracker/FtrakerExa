@@ -31,10 +31,19 @@ export default defineEventHandler(async (events) => {
       setResponseStatus(events, 404);
       return { statusCode: 404, body: { message: "Category not found" } };
     }
-    await transactions.updateMany(
-      { user: dataUser.id, category: body._id },
-      { $unset: { category: "" } }
-    );
+    const usedCount = await transactions.countDocuments({
+      user: dataUser.id,
+      category: body._id,
+    });
+    if (usedCount > 0) {
+      setResponseStatus(events, 400);
+      return {
+        statusCode: 400,
+        body: {
+          message: `Cannot delete category "${category.name}": it is currently used by ${usedCount} transaction${usedCount > 1 ? "s" : ""}. Please reassign or delete those transactions first.`,
+        },
+      };
+    }
     await Category.deleteOne({ _id: body._id });
     broadcastToUser(dataUser.id, "category:changed", { action: "deleted", _senderClientId: getHeader(events, "x-client-id") || "" });
     setResponseStatus(events, 200);
