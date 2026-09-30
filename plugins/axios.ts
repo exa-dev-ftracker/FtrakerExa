@@ -49,18 +49,25 @@ export default defineNuxtPlugin((nuxtApp) => {
         headersObj.Cookie = headers.cookie;
       }
     } else {
-      // Client: Authorization + clientId
+      config.headers = config.headers || {};
+      const headersObj = config.headers as any;
       const token = tokenCookie.value;
       if (token) {
-        config.headers = config.headers || {};
-        const headersObj = config.headers as any;
         headersObj.Authorization = `Bearer ${token}`;
         headersObj["x-client-id"] = getClientId();
       }
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz) {
+          headersObj["x-timezone"] = tz;
+        }
+      } catch (_) {}
     }
+
 
     return config;
   });
+
 
   // =========================
   // RESPONSE INTERCEPTOR

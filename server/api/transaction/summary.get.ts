@@ -66,24 +66,33 @@ export default defineEventHandler(async (events) => {
             baseQuery.description = { $regex: search.trim(), $options: "i" };
         }
 
+        const timezone = await resolveUserTimezone(events, userData.id);
+
         // Apply date filters based on view
         if (view === "Custom") {
             if (startDate && endDate) {
-                baseQuery.createdAt = {
-                    $gte: new Date(`${startDate}T00:00:00.000Z`),
-                    $lte: new Date(`${endDate}T23:59:59.999Z`),
-                };
+                const sStr = String(startDate).split("T")[0];
+                const eStr = String(endDate).split("T")[0];
+                const s = new Date(`${sStr}T00:00:00.000`);
+                const e = new Date(`${eStr}T23:59:59.999`);
+                const sUtc = createUtcFromZoned(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0, 0, 0, timezone);
+                const eUtc = createUtcFromZoned(e.getFullYear(), e.getMonth(), e.getDate(), 23, 59, 59, 999, timezone);
+                baseQuery.$or = [
+                    { date: { $gte: sUtc, $lte: eUtc } },
+                    { date: { $exists: false }, createdAt: { $gte: sUtc, $lte: eUtc } },
+                ];
             }
         } else if (view !== "All") {
-            const { currentPeriode } = selectedViewPeriode(view);
+            const { currentPeriode } = selectedViewPeriode(view, timezone);
             const period = currentPeriode();
             if (period.start && period.end) {
-                baseQuery.createdAt = {
-                    $gte: period.start,
-                    $lte: period.end,
-                };
+                baseQuery.$or = [
+                    { date: { $gte: period.start, $lte: period.end } },
+                    { date: { $exists: false }, createdAt: { $gte: period.start, $lte: period.end } },
+                ];
             }
         }
+
 
         const items = await transactions.find(baseQuery).select("amount type").lean();
 

@@ -45,16 +45,18 @@ export default defineEventHandler(async (events) => {
         const dataUser: dataUserRedis = JSON.parse(user);
         const { view = "Month" } = getQuery(events) as { view?: string };
 
-        const { currentPeriode } = selectedViewPeriode(view);
+        const timezone = await resolveUserTimezone(events, dataUser.id);
+        const { currentPeriode } = selectedViewPeriode(view, timezone);
         const period = currentPeriode();
 
         const baseQuery: Record<string, any> = { user: dataUser.id };
         if (period.start && period.end) {
-            baseQuery.createdAt = {
-                $gte: period.start,
-                $lte: period.end,
-            };
+            baseQuery.$or = [
+                { date: { $gte: period.start, $lte: period.end } },
+                { date: { $exists: false }, createdAt: { $gte: period.start, $lte: period.end } },
+            ];
         }
+
 
         const allTransactions = await transactions
             .find(baseQuery)

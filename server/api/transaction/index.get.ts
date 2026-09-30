@@ -97,24 +97,33 @@ export default defineEventHandler(async (events) => {
             sortQuery = { amount: 1, createdAt: -1 };
         }
 
+        const timezone = await resolveUserTimezone(events, userData.id);
+
         // Apply date range
         if (view === "Custom") {
             if (startDate && endDate) {
-                baseQuery.createdAt = {
-                    $gte: new Date(`${startDate}T00:00:00.000Z`),
-                    $lte: new Date(`${endDate}T23:59:59.999Z`),
-                };
+                const sStr = String(startDate).split("T")[0];
+                const eStr = String(endDate).split("T")[0];
+                const s = new Date(`${sStr}T00:00:00.000`);
+                const e = new Date(`${eStr}T23:59:59.999`);
+                const sUtc = createUtcFromZoned(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0, 0, 0, timezone);
+                const eUtc = createUtcFromZoned(e.getFullYear(), e.getMonth(), e.getDate(), 23, 59, 59, 999, timezone);
+                baseQuery.$or = [
+                    { date: { $gte: sUtc, $lte: eUtc } },
+                    { date: { $exists: false }, createdAt: { $gte: sUtc, $lte: eUtc } },
+                ];
             }
         } else if (view !== "All") {
-            const { currentPeriode } = selectedViewPeriode(view);
+            const { currentPeriode } = selectedViewPeriode(view, timezone);
             const period = currentPeriode();
             if (period.start && period.end) {
-                baseQuery.createdAt = {
-                    $gte: period.start,
-                    $lte: period.end,
-                };
+                baseQuery.$or = [
+                    { date: { $gte: period.start, $lte: period.end } },
+                    { date: { $exists: false }, createdAt: { $gte: period.start, $lte: period.end } },
+                ];
             }
         }
+
 
         // Paginated mode (used by infinite scroll in transactions page)
         if (isPaginated) {
@@ -172,20 +181,34 @@ export default defineEventHandler(async (events) => {
         }
 
         // Periodic comparison for Dashboard (current vs last period)
-        const { lastPeriode, currentPeriode } = selectedViewPeriode(view);
+        const { lastPeriode, currentPeriode } = selectedViewPeriode(view, timezone);
+        const currP = currentPeriode();
+        const lastP = lastPeriode();
+        const currentQuery: Record<string, any> = { ...baseQuery };
+        if (currP.start && currP.end) {
+            currentQuery.$or = [
+                { date: { $gte: currP.start, $lte: currP.end } },
+                { date: { $exists: false }, createdAt: { $gte: currP.start, $lte: currP.end } },
+            ];
+        }
+        const lastQuery: Record<string, any> = { ...baseQuery };
+        if (lastP.start && lastP.end) {
+            lastQuery.$or = [
+                { date: { $gte: lastP.start, $lte: lastP.end } },
+                { date: { $exists: false }, createdAt: { $gte: lastP.start, $lte: lastP.end } },
+            ];
+        }
+
         const current = await transactions
-            .find({ ...baseQuery })
+            .find(currentQuery)
             .sort(sortQuery)
-            .gte("createdAt", currentPeriode().start)
-            .lte("createdAt", currentPeriode().end)
             .populate("category");
 
         const last = await transactions
-            .find({ ...baseQuery })
+            .find(lastQuery)
             .sort(sortQuery)
-            .gte("createdAt", lastPeriode().start)
-            .lte("createdAt", lastPeriode().end)
             .populate("category");
+
 
         setResponseStatus(events, 200);
         return {
