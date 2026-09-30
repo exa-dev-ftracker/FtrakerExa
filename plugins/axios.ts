@@ -70,11 +70,22 @@ export default defineNuxtPlugin((nuxtApp) => {
     async (error: AxiosError) => {
       const originalRequest: any = error.config;
 
-      if (
-        error.response?.status !== 401 ||
-        originalRequest?._retry ||
-        originalRequest?.url?.includes("/api/auth/refresh")
-      ) {
+      // 1. Skip if not 401 or already retried
+      if (error.response?.status !== 401 || originalRequest?._retry) {
+        return Promise.reject(error);
+      }
+
+      // 2. Skip auth endpoints (/api/auth/login, /api/auth/register, /api/auth/refresh, etc.)
+      // so login/register credential errors are passed directly to the caller without triggering refresh
+      const requestUrl = originalRequest?.url || "";
+      const isAuthEndpoint =
+        requestUrl.includes("/api/auth/") ||
+        requestUrl.includes("/auth/") ||
+        requestUrl.includes("/login") ||
+        requestUrl.includes("/register") ||
+        requestUrl.includes("/users");
+
+      if (isAuthEndpoint) {
         return Promise.reject(error);
       }
 
@@ -125,7 +136,8 @@ export default defineNuxtPlugin((nuxtApp) => {
             navigateTo("/login");
           }
         }
-        return Promise.reject(err);
+        // Reject with the original error so callers receive the real failure reason
+        return Promise.reject(error);
       }
     },
   );
