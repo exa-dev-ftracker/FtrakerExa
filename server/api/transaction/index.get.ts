@@ -97,7 +97,8 @@ export default defineEventHandler(async (events) => {
             sortQuery = { amount: 1, createdAt: -1 };
         }
 
-        const timezone = await resolveUserTimezone(events, userData.id);
+        const timezone = await resolveUserTimezone(events, dataUser.id);
+
 
         // Apply date range
         if (view === "Custom") {

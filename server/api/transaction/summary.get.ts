@@ -66,7 +66,8 @@ export default defineEventHandler(async (events) => {
             baseQuery.description = { $regex: search.trim(), $options: "i" };
         }
 
-        const timezone = await resolveUserTimezone(events, userData.id);
+        const timezone = await resolveUserTimezone(events, dataUser.id);
+
 
         // Apply date filters based on view
         if (view === "Custom") {
