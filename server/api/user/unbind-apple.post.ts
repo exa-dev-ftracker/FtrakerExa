@@ -52,6 +52,22 @@ export default defineEventHandler(async (event) => {
             };
         }
 
+        // Security Check: If account uses Apple Private Relay, setting a password alone is insufficient
+        // because the user does not know their masked proxy email. Google MUST be linked to avoid lockout.
+        const isRelayEmail = user.email?.toLowerCase().includes("privaterelay.appleid.com") ||
+                             user.apple_email?.toLowerCase().includes("privaterelay.appleid.com") ||
+                             user.email?.toLowerCase().startsWith("apple_");
+
+        if (isRelayEmail && !user.google_id) {
+            setResponseStatus(event, 400);
+            return {
+                statusCode: 400,
+                body: {
+                    message: "Cannot unbind Apple ID with a private relay email. Please link your Google account first to prevent account lockout, or delete this account.",
+                },
+            };
+        }
+
         // Security: Ensure user has another authentication method (Google or Password) to avoid lockout
         if (!user.google_id && !user.password) {
             setResponseStatus(event, 400);
