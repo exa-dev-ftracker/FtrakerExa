@@ -39,6 +39,7 @@ const appliedEndDate = ref<string>("");
 const page = ref(1);
 const limit = 20;
 const hasMore = ref(true);
+const nextCursor = ref<string | null>(null);
 const isLoadingInitial = ref(false);
 const isLoadingMore = ref(false);
 const isDeleting = ref(false);
@@ -124,11 +125,12 @@ const fetchSummary = async () => {
   }
 };
 
-// 2. Fetch Transactions Page (Scroll Pagination)
-const fetchTransactions = async (targetPage = 1, isAppend = false) => {
+// 2. Fetch Transactions Page (Cursor-Based Scroll Pagination)
+const fetchTransactions = async (isAppend = false) => {
   if (selectedView.value === "Custom" && (!appliedStartDate.value || !appliedEndDate.value)) {
     transactionsList.value = [];
     hasMore.value = false;
+    nextCursor.value = null;
     return;
   }
 
@@ -140,9 +142,14 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
 
   try {
     const params = buildFilterParams();
-    params.append("page", String(targetPage));
     params.append("limit", String(limit));
     params.append("sort", sortBy.value);
+
+    if (isAppend && nextCursor.value) {
+      params.append("cursor", nextCursor.value);
+    } else {
+      params.append("page", "1");
+    }
 
     const res = await ($axios as any).get<TransactionResponse>(
       `/api/transaction?${params.toString()}`
@@ -159,11 +166,13 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
       transactionsList.value = newItems;
     }
 
-    page.value = targetPage;
     if (pagination) {
-      hasMore.value = pagination.hasMore;
+      hasMore.value = !!pagination.hasMore;
+      nextCursor.value = pagination.nextCursor || null;
+      if (pagination.page) page.value = pagination.page;
     } else {
       hasMore.value = newItems.length >= limit;
+      nextCursor.value = null;
     }
   } catch (err: any) {
     toast.add({
@@ -180,16 +189,18 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
 // Trigger Next Page for Infinite Scroll
 const loadMoreTransactions = async () => {
   if (isLoadingInitial.value || isLoadingMore.value || !hasMore.value) return;
-  await fetchTransactions(page.value + 1, true);
+  page.value++;
+  await fetchTransactions(true);
 };
 
-// Full Refresh (resets to page 1 & re-fetches summary)
+// Full Refresh (resets cursor & re-fetches summary)
 const resetAndRefresh = async () => {
   page.value = 1;
+  nextCursor.value = null;
   hasMore.value = true;
   await Promise.all([
     fetchSummary(),
-    fetchTransactions(1, false),
+    fetchTransactions(false),
   ]);
 };
 

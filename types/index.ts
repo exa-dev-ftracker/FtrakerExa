@@ -48,6 +48,7 @@ export interface PaginationInfo {
     total: number
     totalPages: number
     hasMore: boolean
+    nextCursor?: string | null
 }
 
 export interface TransactionSummary {
