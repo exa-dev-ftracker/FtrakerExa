@@ -28,6 +28,13 @@ const categoryData = computed<Category>(() => {
   };
 });
 
+const linkedIncomeDescription = computed(() => {
+  const link = props.data?.linkedIncomeId;
+  if (typeof link === "object" && link !== null) {
+    return link.description;
+  }
+  return null;
+});
 
 const action = [
   [
@@ -111,6 +118,24 @@ const action = [
                 class="w-3 h-3"
               />
               {{ categoryData.name }}
+            </span>
+
+            <!-- Linked Income Badge for Expense -->
+            <span
+              v-if="!isIncome && linkedIncomeDescription"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-lg inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+            >
+              <UIcon name="i-heroicons-link" class="w-3 h-3" />
+              {{ linkedIncomeDescription }}
+            </span>
+
+            <!-- Sisa / Remaining Balance for Income -->
+            <span
+              v-if="isIncome && props.data.remainingAmount !== undefined"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-lg inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+            >
+              <UIcon name="i-heroicons-banknotes" class="w-3 h-3" />
+              Sisa: Rp {{ props.data.remainingAmount.toLocaleString('id-ID') }}
             </span>
           </div>
         </div>

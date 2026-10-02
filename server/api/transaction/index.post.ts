@@ -43,6 +43,7 @@ export default defineEventHandler(async (events) => {
             createdAt?: string;
             date?: string;
             category?: string;
+            linkedIncomeId?: string;
         }>(events);
         if (!body || !body.category) {
             setResponseStatus(events, 400);
@@ -51,8 +52,21 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt, date, category} = body;
+        const {amount, type, description, createdAt, date, category, linkedIncomeId} = body;
         const txDate = date ? new Date(date) : (createdAt ? new Date(createdAt) : new Date());
+
+        let validLinkedIncomeId: any = undefined;
+        if (linkedIncomeId && type?.toLowerCase() === "expense") {
+            const parentIncome = await transactions.findOne({
+                _id: linkedIncomeId,
+                user: userData.id,
+                type: { $regex: /^income$/i },
+            });
+            if (parentIncome) {
+                validLinkedIncomeId = parentIncome._id;
+            }
+        }
+
         const transaction = new transactions({
             user: userData.id,
             amount,
@@ -61,6 +75,7 @@ export default defineEventHandler(async (events) => {
             createdAt: txDate,
             date: txDate,
             category: category || undefined,
+            linkedIncomeId: validLinkedIncomeId,
         });
         await transaction.save();
         broadcastToUser(userData.id, "transaction:created", { _id: transaction._id, _senderClientId: getHeader(events, "x-client-id") || "" });

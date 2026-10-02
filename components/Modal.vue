@@ -93,10 +93,49 @@ const formData = reactive({
   type: "",
   amount: 0,
   category: "",
+  linkedIncomeId: "",
   _id: "",
 });
 
 const formattedAmount = ref("Rp 0");
+const availableIncomes = ref<Transaction[]>([]);
+const isLoadingIncomes = ref(false);
+
+const loadAvailableIncomes = async () => {
+  isLoadingIncomes.value = true;
+  try {
+    const res = await (useNuxtApp().$axios as any).get("/api/transaction/incomes/available");
+    availableIncomes.value = res.data?.body || res.data || [];
+  } catch (e) {
+    console.error("Failed to load available incomes", e);
+  } finally {
+    isLoadingIncomes.value = false;
+  }
+};
+
+const incomeOptions = computed(() => {
+  return [
+    { value: "", label: "General Balance (No link)" },
+    ...availableIncomes.value.map((inc) => {
+      const rem = inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount;
+      return {
+        value: inc._id,
+        label: `${inc.description} (Sisa: Rp ${rem.toLocaleString("id-ID")})`,
+      };
+    }),
+  ];
+});
+
+watch(
+  () => formData.type,
+  (newType) => {
+    if (newType === "Income") {
+      formData.linkedIncomeId = "";
+    } else if (newType === "Expense") {
+      loadAvailableIncomes();
+    }
+  }
+);
 
 const onInput = (event: InputEvent) => {
   const value = event.target.value.replace(/[^\d]/g, "");
@@ -179,6 +218,7 @@ const resetForm = () => {
   formData.amount = 0;
   const general = store.categories.find(c => c.name === "General");
   formData.category = general?._id || "";
+  formData.linkedIncomeId = "";
   formData._id = "";
   formattedAmount.value = "Rp 0";
 };
@@ -210,7 +250,17 @@ watch(
         typeof newValue.category === "object" && newValue.category
           ? (newValue.category as Category)._id
           : (newValue.category as string) || "";
+      if (newValue.linkedIncomeId) {
+        formData.linkedIncomeId = typeof newValue.linkedIncomeId === "object"
+          ? (newValue.linkedIncomeId as any)._id
+          : newValue.linkedIncomeId;
+      } else {
+        formData.linkedIncomeId = "";
+      }
       formattedAmount.value = currency(newValue.amount);
+      if (parsedType === "Expense") {
+        loadAvailableIncomes();
+      }
     } else {
       resetForm();
     }
@@ -223,6 +273,9 @@ watch(
   (newValue) => {
     if (newValue && store.categories.length === 0) {
       store.fetchCategories();
+    }
+    if (newValue) {
+      loadAvailableIncomes();
     }
     if (newValue && !props.data) {
       formData.createdAt = getTodayInTimezone();
@@ -322,6 +375,21 @@ watch(
               v-model="formData.category"
               placeholder="Select a category"
               :options="filteredCategories.map(c => ({ value: c._id, label: c.name }))"
+              :ui="{ rounded: 'rounded-xl' }"
+            />
+          </UFormGroup>
+
+          <UFormGroup
+            v-if="formData.type === 'Expense'"
+            name="linkedIncomeId"
+            label="🔗 Funded By (Linked Income)"
+            help="Optional: deduct this expense from a specific income"
+          >
+            <USelect
+              name="linkedIncomeId"
+              v-model="formData.linkedIncomeId"
+              placeholder="General Balance (No link)"
+              :options="incomeOptions"
               :ui="{ rounded: 'rounded-xl' }"
             />
           </UFormGroup>

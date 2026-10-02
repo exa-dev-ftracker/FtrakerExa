@@ -19,10 +19,16 @@ export interface Transaction {
     type: string
     amount: number
     description: string
+    date?: string
     createdAt: string
     _id: string
     updatedAt: string
     category?: Category | string | null
+    linkedIncomeId?: string | { _id: string; description: string; amount: number; date?: string; type?: string } | null
+    remainingAmount?: number
+    totalUsed?: number
+    percentageUsed?: number
+    expenseCount?: number
 }
 
 export interface PaginationInfo {

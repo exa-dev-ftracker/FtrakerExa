@@ -45,6 +45,14 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Not Found"},
             };
         }
+
+        // Edge Case 3: If deleted transaction is an Income, unlink all child expenses
+        if (transactions.type?.toLowerCase() === "income") {
+            await Transactions.updateMany(
+                { linkedIncomeId: id },
+                { $unset: { linkedIncomeId: "" } }
+            );
+        }
         broadcastToUser(userData.id, "transaction:deleted", { id, _senderClientId: getHeader(events, "x-client-id") || "" });
         setResponseStatus(events, 200);
         return {

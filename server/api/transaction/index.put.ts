@@ -48,7 +48,7 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Category is required"},
             };
         }
-        const {amount, type, description, createdAt, date, category, _id} = body;
+        const {amount, type, description, createdAt, date, category, linkedIncomeId, _id} = body;
         const transaction = await transactions.findOne({_id});
         if (!transaction) {
             setResponseStatus(events, 404);
@@ -64,6 +64,39 @@ export default defineEventHandler(async (events) => {
                 body: {message: "Forbidden"},
             };
         }
+
+        const prevType = transaction.type?.toLowerCase();
+        const nextType = type ? type.toLowerCase() : prevType;
+
+        // Edge Case 1: Income -> Expense
+        if (prevType === "income" && nextType === "expense") {
+            await transactions.updateMany(
+                { linkedIncomeId: transaction._id },
+                { $unset: { linkedIncomeId: "" } }
+            );
+            transaction.linkedIncomeId = undefined;
+        }
+        // Edge Case 2: Expense -> Income
+        else if (prevType === "expense" && nextType === "income") {
+            transaction.linkedIncomeId = undefined;
+        }
+
+        // Handle linkedIncomeId update if Expense
+        if (nextType === "expense" && linkedIncomeId !== undefined) {
+            if (!linkedIncomeId) {
+                transaction.linkedIncomeId = undefined;
+            } else if (String(linkedIncomeId) !== String(transaction._id)) {
+                const parentIncome = await transactions.findOne({
+                    _id: linkedIncomeId,
+                    user: userData.id,
+                    type: { $regex: /^income$/i },
+                });
+                if (parentIncome) {
+                    transaction.linkedIncomeId = parentIncome._id as any;
+                }
+            }
+        }
+
         transaction.amount = amount;
         transaction.type = type;
         transaction.description = description;

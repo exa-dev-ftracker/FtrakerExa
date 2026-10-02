@@ -87,6 +87,11 @@ export default defineEventHandler(async (events) => {
             baseQuery.description = { $regex: search.trim(), $options: "i" };
         }
 
+        const { linkedIncomeId } = getQuery(events) as { linkedIncomeId?: string };
+        if (linkedIncomeId) {
+            baseQuery.linkedIncomeId = linkedIncomeId;
+        }
+
         // Sorting options
         let sortQuery: Record<string, any> = { createdAt: -1 };
         if (sort === "oldest") {
@@ -134,7 +139,8 @@ export default defineEventHandler(async (events) => {
                 .sort(sortQuery)
                 .skip(skip)
                 .limit(limitNum)
-                .populate("category");
+                .populate("category")
+                .populate("linkedIncomeId", "description amount date type");
 
             const current = currentDocs.map((t) => {
                 const obj = t.toObject ? t.toObject() : { ...t };
@@ -169,7 +175,8 @@ export default defineEventHandler(async (events) => {
             const current = await transactions
                 .find(baseQuery)
                 .sort(sortQuery)
-                .populate("category");
+                .populate("category")
+                .populate("linkedIncomeId", "description amount date type");
 
             setResponseStatus(events, 200);
             return {
@@ -203,12 +210,14 @@ export default defineEventHandler(async (events) => {
         const current = await transactions
             .find(currentQuery)
             .sort(sortQuery)
-            .populate("category");
+            .populate("category")
+            .populate("linkedIncomeId", "description amount date type");
 
         const last = await transactions
             .find(lastQuery)
             .sort(sortQuery)
-            .populate("category");
+            .populate("category")
+            .populate("linkedIncomeId", "description amount date type");
 
 
         setResponseStatus(events, 200);
