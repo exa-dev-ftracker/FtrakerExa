@@ -199,8 +199,10 @@ const selectedIncome = computed(() => {
 const formatIncomeDate = (d?: string) => {
   if (!d) return "";
   try {
+    const tz = store.user?.timezone || undefined;
     const dateObj = new Date(d);
     return new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
       month: "short",
       day: "numeric",
       year: "numeric",
