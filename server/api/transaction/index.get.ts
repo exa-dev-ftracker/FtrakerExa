@@ -92,14 +92,14 @@ export default defineEventHandler(async (events) => {
             baseQuery.linkedIncomeId = linkedIncomeId;
         }
 
-        // Sorting options
-        let sortQuery: Record<string, any> = { createdAt: -1 };
+        // Sorting options with stable _id tiebreaker for deterministic pagination
+        let sortQuery: Record<string, any> = { date: -1, createdAt: -1, _id: -1 };
         if (sort === "oldest") {
-            sortQuery = { createdAt: 1 };
+            sortQuery = { date: 1, createdAt: 1, _id: 1 };
         } else if (sort === "highest") {
-            sortQuery = { amount: -1, createdAt: -1 };
+            sortQuery = { amount: -1, date: -1, createdAt: -1, _id: -1 };
         } else if (sort === "lowest") {
-            sortQuery = { amount: 1, createdAt: -1 };
+            sortQuery = { amount: 1, date: 1, createdAt: 1, _id: 1 };
         }
 
         const timezone = await resolveUserTimezone(events, dataUser.id);

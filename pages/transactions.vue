@@ -152,7 +152,9 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
     const pagination = data?.body?.pagination;
 
     if (isAppend) {
-      transactionsList.value.push(...newItems);
+      const existingIds = new Set(transactionsList.value.map((t) => String(t._id)));
+      const uniqueNewItems = newItems.filter((t) => !existingIds.has(String(t._id)));
+      transactionsList.value.push(...uniqueNewItems);
     } else {
       transactionsList.value = newItems;
     }
