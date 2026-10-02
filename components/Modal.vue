@@ -57,34 +57,10 @@ const getTodayInTimezone = (tz?: string): string => {
   }
 };
 
-const toUtcIsoString = (dateInput: string): string => {
-  if (!dateInput) return new Date().toISOString();
-  
-  const todayStr = getTodayInTimezone();
-  // If it's today's date and creating a fresh transaction, record current exact UTC timestamp
-  if (dateInput === todayStr && !props.isEdit) {
-    return new Date().toISOString();
-  }
-
-  // Convert date in user timezone to UTC ISO string
-  const tz = store.user?.timezone;
-  try {
-    const parts = dateInput.split("-").map(Number);
-    if (parts.length === 3) {
-      const now = new Date();
-      // Anchor at current time on selected date
-      const testUtc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()));
-      if (!tz || tz === "UTC") {
-        return testUtc.toISOString();
-      }
-      const invDate = new Date(testUtc.toLocaleString("en-US", { timeZone: tz }));
-      const diff = testUtc.getTime() - invDate.getTime();
-      return new Date(testUtc.getTime() + diff).toISOString();
-    }
-  } catch (e) {
-    // fallback
-  }
-  return new Date(`${dateInput}T12:00:00.000Z`).toISOString();
+const toTransactionDate = (dateInput: string): string => {
+  if (!dateInput) return `${getTodayInTimezone()}T00:00:00.000Z`;
+  const dateOnly = String(dateInput).split("T")[0];
+  return `${dateOnly}T00:00:00.000Z`;
 };
 
 const formData = reactive({
@@ -198,18 +174,20 @@ const selectedIncome = computed(() => {
 
 const formatIncomeDate = (d?: string) => {
   if (!d) return "";
-  try {
-    const tz = store.user?.timezone || undefined;
-    const dateObj = new Date(d);
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
+  const str = String(d).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = parseInt(match[1]);
+    const month = parseInt(match[2]) - 1;
+    const day = parseInt(match[3]);
+    const dateObj = new Date(year, month, day);
+    return dateObj.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    }).format(dateObj);
-  } catch {
-    return d.split("T")[0] || "";
+    });
   }
+  return str.split("T")[0] || "";
 };
 
 const projectedRemaining = computed(() => {
@@ -260,11 +238,11 @@ const onSubmit = async () => {
 
   try {
     await schema.parseAsync(formData);
-    const utcDateStr = toUtcIsoString(formData.createdAt);
+    const cleanDateStr = toTransactionDate(formData.createdAt);
     const payload = {
       ...formData,
-      createdAt: utcDateStr,
-      date: utcDateStr,
+      createdAt: cleanDateStr,
+      date: cleanDateStr,
     };
     if (props.isEdit && props.data) {
       payload._id = props.data._id;
@@ -332,16 +310,12 @@ watch(
   (newValue) => {
     if (newValue) {
       const rawDate = (newValue as any).date || newValue.createdAt;
-      try {
-        const timeZone = store.user?.timezone || undefined;
-        formData.createdAt = new Intl.DateTimeFormat("en-CA", {
-          timeZone,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(new Date(rawDate));
-      } catch (e) {
-        formData.createdAt = rawDate ? rawDate.split("T")[0] : getTodayInTimezone();
+      if (rawDate) {
+        const str = String(rawDate).trim();
+        const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+        formData.createdAt = match ? match[1] : str.split("T")[0];
+      } else {
+        formData.createdAt = getTodayInTimezone();
       }
       formData.description = newValue.description;
       let parsedType =

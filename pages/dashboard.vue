@@ -60,6 +60,27 @@ const transactionCount = computed(() => data.value?.body?.metrics?.transactionCo
 const recentTransactions = computed(() => data.value?.body?.recentTransactions ?? []);
 const topExpenses = computed(() => data.value?.body?.topExpenses ?? []);
 
+const formatTxDate = (t: any) => {
+  const rawDate = t.date && !String(t.date).includes("2026-09-28T23:32:05")
+    ? t.date
+    : t.createdAt;
+  if (!rawDate) return "";
+  const str = String(rawDate).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = parseInt(match[1]);
+    const month = parseInt(match[2]) - 1;
+    const day = parseInt(match[3]);
+    const dateObj = new Date(year, month, day);
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  return str.split("T")[0];
+};
+
 watch(selectedView, async () => {
   await refresh();
 });
@@ -326,18 +347,7 @@ const currency = (val: number) => {
                         {{ t.description }}
                       </p>
                       <p class="text-xs font-bold text-slate-400">
-                        {{
-                          new Date(
-                            (t as any).date && !String((t as any).date).includes("2026-09-28T23:32:05")
-                              ? (t as any).date
-                              : t.createdAt
-                          ).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            timeZone: store.user?.timezone || undefined,
-                          })
-                        }}
+                        {{ formatTxDate(t) }}
                       </p>
                     </div>
                   </div>

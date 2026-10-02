@@ -193,20 +193,12 @@ const resetAndRefresh = async () => {
 
 const getDateKey = (dateStr: string) => {
   if (!dateStr) return "";
-  if (dateStr.includes("T00:00:00")) {
-    return dateStr.split("T")[0];
+  const str = String(dateStr).trim();
+  const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
   }
-  const tz = store.user?.timezone || undefined;
-  try {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: tz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date(dateStr));
-  } catch (e) {
-    return new Date(dateStr).toISOString().split("T")[0];
-  }
+  return str.split("T")[0];
 };
 
 const formatDateHeading = (dateKey: string) => {

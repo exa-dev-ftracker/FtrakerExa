@@ -49,6 +49,21 @@ const formattedDateTime = computed(() => {
   const t = detailedData.value || props.transaction;
   if (!t) return "";
   const rawDate = t.date || t.createdAt;
+  if (!rawDate) return "";
+  const str = String(rawDate).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = parseInt(match[1]);
+    const month = parseInt(match[2]) - 1;
+    const day = parseInt(match[3]);
+    const dateObj = new Date(year, month, day);
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
   try {
     const tz = store.user?.timezone || undefined;
     const dateObj = new Date(rawDate);
@@ -58,29 +73,28 @@ const formattedDateTime = computed(() => {
       month: "short",
       day: "numeric",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZoneName: "short",
     }).format(dateObj);
   } catch {
-    return rawDate;
+    return str;
   }
 });
 
 const formatDateShort = (d?: string) => {
   if (!d) return "";
-  try {
-    const tz = store.user?.timezone || undefined;
-    const dateObj = new Date(d);
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
+  const str = String(d).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = parseInt(match[1]);
+    const month = parseInt(match[2]) - 1;
+    const day = parseInt(match[3]);
+    const dateObj = new Date(year, month, day);
+    return dateObj.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    }).format(dateObj);
-  } catch {
-    return d.split("T")[0] || "";
+    });
   }
+  return str.split("T")[0] || "";
 };
 
 const fetchDetail = async (id: string) => {
