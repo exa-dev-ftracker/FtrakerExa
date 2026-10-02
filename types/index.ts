@@ -29,6 +29,17 @@ export interface Transaction {
     totalUsed?: number
     percentageUsed?: number
     expenseCount?: number
+    linkedExpenses?: Transaction[]
+    linkedIncomeDetails?: {
+        _id: string
+        description: string
+        amount: number
+        date?: string
+        totalUsed: number
+        remainingAmount: number
+        expenseCount: number
+        percentageUsed?: number
+    }
 }
 
 export interface PaginationInfo {

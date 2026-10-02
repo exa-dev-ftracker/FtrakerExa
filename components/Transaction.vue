@@ -36,8 +36,19 @@ const linkedIncomeDescription = computed(() => {
   return null;
 });
 
-const action = [
+const store = useDefaultStore();
+
+const openDetail = () => {
+  store.showTransactionDetail(props.data);
+};
+
+const action = computed(() => [
   [
+    {
+      label: "View Details",
+      icon: "i-heroicons-eye",
+      click: openDetail,
+    },
     {
       label: "Edit Transaction",
       icon: "i-heroicons-pencil-square",
@@ -66,12 +77,13 @@ const action = [
       },
     },
   ],
-];
+]);
 </script>
 
 <template>
   <div
-    class="group relative bg-white dark:bg-gray-900/70 backdrop-blur-sm border border-gray-200/70 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-500/40 hover:-translate-y-0.5 hover:z-20 focus-within:z-30"
+    class="group relative bg-white dark:bg-gray-900/70 backdrop-blur-sm border border-gray-200/70 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-500/40 hover:-translate-y-0.5 hover:z-20 focus-within:z-30 cursor-pointer"
+    @click="openDetail"
   >
     <!-- Subtle accent line based on income/expense -->
     <div
@@ -156,19 +168,21 @@ const action = [
           </p>
         </div>
 
-        <UDropdown
-          :items="action"
-          :popper="{ placement: 'bottom-end', strategy: 'fixed' }"
-          :ui="{ container: 'z-50' }"
-        >
-          <UButton
-            color="gray"
-            variant="ghost"
-            icon="i-heroicons-ellipsis-vertical"
-            class="rounded-xl w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-white/10 transition-opacity"
-            aria-label="Actions"
-          />
-        </UDropdown>
+        <div @click.stop>
+          <UDropdown
+            :items="action"
+            :popper="{ placement: 'bottom-end', strategy: 'fixed' }"
+            :ui="{ container: 'z-50' }"
+          >
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-ellipsis-vertical"
+              class="rounded-xl w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-white/10 transition-opacity"
+              aria-label="Actions"
+            />
+          </UDropdown>
+        </div>
       </div>
     </div>
   </div>

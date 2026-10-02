@@ -136,6 +136,11 @@ watch(
       v-model:isModalOpen="store.isTransactionModalOpen"
       @submit="store.triggerRefresh"
     />
+    <TransactionDetailModal
+      v-if="store.isAuth"
+      v-model:isOpen="store.isDetailModalOpen"
+      :transaction="store.selectedTransactionForDetail"
+    />
   </div>
 </template>
 

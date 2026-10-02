@@ -8,6 +8,8 @@ export const useDefaultStore = defineStore("default", {
       user: null as { email: string; name: string; id: string; timezone?: string } | null,
       isTransactionModalOpen: false,
       transactionToEdit: null as Transaction | null,
+      isDetailModalOpen: false,
+      selectedTransactionForDetail: null as Transaction | null,
       refreshTrigger: 0,
       categories: [] as Category[],
     };
@@ -35,6 +37,16 @@ export const useDefaultStore = defineStore("default", {
     editTransaction(transaction: Transaction) {
       this.transactionToEdit = JSON.parse(JSON.stringify(transaction));
       this.isTransactionModalOpen = true;
+    },
+    showTransactionDetail(transaction: Transaction) {
+      this.selectedTransactionForDetail = transaction;
+      this.isDetailModalOpen = true;
+    },
+    toggleDetailModal(value: boolean) {
+      this.isDetailModalOpen = value;
+      if (!value) {
+        this.selectedTransactionForDetail = null;
+      }
     },
     triggerRefresh() {
       this.refreshTrigger++;

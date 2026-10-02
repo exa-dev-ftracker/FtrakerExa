@@ -298,7 +298,8 @@ const currency = (val: number) => {
                 <div
                   v-for="t in recentTransactions"
                   :key="t._id"
-                  class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors group"
+                  class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors group cursor-pointer"
+                  @click="store.showTransactionDetail(t)"
                 >
                   <div class="flex items-center gap-4">
                     <div
