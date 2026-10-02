@@ -34,14 +34,30 @@ export default defineEventHandler(async (events) => {
         }
         const userData: dataUserRedis = JSON.parse(user);
 
-        // Fetch user's latest incomes
-        const incomes = await transactions.find({
+        const queryParams = getQuery(events) as { page?: string; limit?: string; search?: string };
+        const pageNum = Math.max(1, parseInt(queryParams.page as string) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(queryParams.limit as string) || 10));
+        const skip = (pageNum - 1) * limitNum;
+
+        const filter: Record<string, any> = {
             user: userData.id,
             type: { $regex: /^income$/i },
-        })
+        };
+
+        if (queryParams.search && String(queryParams.search).trim()) {
+            filter.description = { $regex: String(queryParams.search).trim(), $options: "i" };
+        }
+
+        const total = await transactions.countDocuments(filter);
+        const totalPages = Math.ceil(total / limitNum);
+        const hasMore = pageNum < totalPages;
+
+        // Fetch user's incomes with pagination
+        const incomes = await transactions.find(filter)
             .populate("category")
             .sort({ date: -1, createdAt: -1 })
-            .limit(50)
+            .skip(skip)
+            .limit(limitNum)
             .lean();
 
         const incomeIds = incomes.map((inc) => inc._id);
@@ -88,7 +104,16 @@ export default defineEventHandler(async (events) => {
         setResponseStatus(events, 200);
         return {
             statusCode: 200,
-            body: result,
+            body: {
+                incomes: result,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total,
+                    totalPages,
+                    hasMore,
+                },
+            },
         };
     } catch (error) {
         logger.error(`Error in getting available incomes: ${error}`);

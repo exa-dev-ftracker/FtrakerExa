@@ -101,29 +101,100 @@ const formattedAmount = ref("Rp 0");
 const availableIncomes = ref<Transaction[]>([]);
 const isLoadingIncomes = ref(false);
 
-const loadAvailableIncomes = async () => {
-  isLoadingIncomes.value = true;
+const incomePage = ref(1);
+const hasMoreIncomes = ref(true);
+const isLoadingIncomes = ref(false);
+const isLoadingMoreIncomes = ref(false);
+const incomeSearch = ref("");
+let incomeSearchDebounceTimer: any = null;
+
+const loadAvailableIncomes = async (reset = false) => {
+  if (reset) {
+    incomePage.value = 1;
+    hasMoreIncomes.value = true;
+    availableIncomes.value = [];
+  }
+  if (isLoadingIncomes.value || isLoadingMoreIncomes.value) return;
+
+  if (incomePage.value === 1) {
+    isLoadingIncomes.value = true;
+  } else {
+    isLoadingMoreIncomes.value = true;
+  }
+
   try {
-    const res = await (useNuxtApp().$axios as any).get("/api/transaction/incomes/available");
-    availableIncomes.value = res.data?.body || res.data || [];
+    const params: Record<string, any> = {
+      page: incomePage.value,
+      limit: 10,
+    };
+    if (incomeSearch.value.trim()) {
+      params.search = incomeSearch.value.trim();
+    }
+    const res = await (useNuxtApp().$axios as any).get("/api/transaction/incomes/available", { params });
+    const payload = res.data?.body || res.data || {};
+    const list: Transaction[] = Array.isArray(payload) ? payload : (payload.incomes || []);
+    const pagination = payload.pagination;
+
+    if (incomePage.value === 1) {
+      availableIncomes.value = list;
+    } else {
+      const existingIds = new Set(availableIncomes.value.map((i) => i._id));
+      const newItems = list.filter((i) => !existingIds.has(i._id));
+      availableIncomes.value = [...availableIncomes.value, ...newItems];
+    }
+
+    if (pagination) {
+      hasMoreIncomes.value = pagination.hasMore;
+    } else {
+      hasMoreIncomes.value = list.length >= 10;
+    }
   } catch (e) {
     console.error("Failed to load available incomes", e);
   } finally {
     isLoadingIncomes.value = false;
+    isLoadingMoreIncomes.value = false;
   }
 };
 
-const incomeOptions = computed(() => {
-  return [
-    { value: "", label: "General Balance (No link)" },
-    ...availableIncomes.value.map((inc) => {
-      const rem = inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount;
-      return {
-        value: inc._id,
-        label: `${inc.description} (Sisa: Rp ${rem.toLocaleString("id-ID")})`,
-      };
-    }),
-  ];
+const loadMoreIncomes = () => {
+  if (!hasMoreIncomes.value || isLoadingIncomes.value || isLoadingMoreIncomes.value) return;
+  incomePage.value++;
+  loadAvailableIncomes(false);
+};
+
+const handleIncomeScroll = (e: Event) => {
+  const target = e.target as HTMLElement;
+  if (!target) return;
+  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
+    loadMoreIncomes();
+  }
+};
+
+const onIncomeSearch = () => {
+  clearTimeout(incomeSearchDebounceTimer);
+  incomeSearchDebounceTimer = setTimeout(() => {
+    loadAvailableIncomes(true);
+  }, 300);
+};
+
+const clearIncomeSearch = () => {
+  incomeSearch.value = "";
+  loadAvailableIncomes(true);
+};
+
+const selectIncome = (id: string, close?: () => void) => {
+  formData.linkedIncomeId = id;
+  if (close) close();
+};
+
+const selectedIncome = computed(() => {
+  if (!formData.linkedIncomeId) return null;
+  const match = availableIncomes.value.find((i) => i._id === formData.linkedIncomeId);
+  if (match) return match;
+  if (props.data?.linkedIncomeId && typeof props.data.linkedIncomeId === "object") {
+    return props.data.linkedIncomeId as any;
+  }
+  return null;
 });
 
 watch(
@@ -132,7 +203,7 @@ watch(
     if (newType === "Income") {
       formData.linkedIncomeId = "";
     } else if (newType === "Expense") {
-      loadAvailableIncomes();
+      loadAvailableIncomes(true);
     }
   }
 );
@@ -221,6 +292,8 @@ const resetForm = () => {
   formData.linkedIncomeId = "";
   formData._id = "";
   formattedAmount.value = "Rp 0";
+  incomeSearch.value = "";
+  incomePage.value = 1;
 };
 
 watch(
@@ -259,7 +332,7 @@ watch(
       }
       formattedAmount.value = currency(newValue.amount);
       if (parsedType === "Expense") {
-        loadAvailableIncomes();
+        loadAvailableIncomes(true);
       }
     } else {
       resetForm();
@@ -274,8 +347,8 @@ watch(
     if (newValue && store.categories.length === 0) {
       store.fetchCategories();
     }
-    if (newValue) {
-      loadAvailableIncomes();
+    if (newValue && formData.type === "Expense") {
+      loadAvailableIncomes(true);
     }
     if (newValue && !props.data) {
       formData.createdAt = getTodayInTimezone();
@@ -383,15 +456,139 @@ watch(
             v-if="formData.type === 'Expense'"
             name="linkedIncomeId"
             label="🔗 Funded By (Linked Income)"
-            help="Optional: deduct this expense from a specific income"
+            help="Optional: link to an income source to track burn-down"
           >
-            <USelect
-              name="linkedIncomeId"
-              v-model="formData.linkedIncomeId"
-              placeholder="General Balance (No link)"
-              :options="incomeOptions"
-              :ui="{ rounded: 'rounded-xl' }"
-            />
+            <UPopover :popper="{ placement: 'bottom-start' }" class="w-full">
+              <template #default="{ open }">
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-left text-sm hover:border-blue-400 dark:hover:border-blue-500 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <div class="truncate flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-md flex items-center justify-center text-xs flex-shrink-0"
+                      :class="selectedIncome ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'"
+                    >
+                      <UIcon :name="selectedIncome ? 'i-heroicons-banknotes' : 'i-heroicons-link-slash'" class="w-3.5 h-3.5" />
+                    </div>
+                    <span v-if="selectedIncome" class="font-medium text-gray-900 dark:text-white truncate">
+                      {{ selectedIncome.description }}
+                      <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
+                        (Sisa: Rp {{ (selectedIncome.remainingAmount !== undefined ? selectedIncome.remainingAmount : selectedIncome.amount).toLocaleString('id-ID') }})
+                      </span>
+                    </span>
+                    <span v-else class="text-gray-400 dark:text-gray-400 font-normal">
+                      General Balance (No link)
+                    </span>
+                  </div>
+                  <UIcon
+                    :name="open ? 'i-heroicons-chevron-up-20-solid' : 'i-heroicons-chevron-down-20-solid'"
+                    class="w-5 h-5 text-gray-400 flex-shrink-0 ml-2"
+                  />
+                </button>
+              </template>
+
+              <template #panel="{ close }">
+                <div class="w-[320px] sm:w-[400px] max-w-[90vw] p-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 space-y-2">
+                  <!-- Search input -->
+                  <div class="mb-1">
+                    <UInput
+                      v-model="incomeSearch"
+                      icon="i-heroicons-magnifying-glass-20-solid"
+                      placeholder="Search income source..."
+                      size="sm"
+                      autofocus
+                      :ui="{ rounded: 'rounded-lg' }"
+                      @input="onIncomeSearch"
+                    >
+                      <template #trailing>
+                        <UButton
+                          v-if="incomeSearch"
+                          color="gray"
+                          variant="link"
+                          icon="i-heroicons-x-mark-20-solid"
+                          :padded="false"
+                          @click="clearIncomeSearch"
+                        />
+                      </template>
+                    </UInput>
+                  </div>
+
+                  <!-- Incomes List with Scroll Pagination -->
+                  <div
+                    class="max-h-60 overflow-y-auto space-y-1 divide-y divide-gray-100 dark:divide-gray-800/40 pr-1 scrollbar-thin"
+                    @scroll="handleIncomeScroll"
+                  >
+                    <!-- Option: General Balance (No Link) -->
+                    <div
+                      class="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
+                      :class="!formData.linkedIncomeId ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                      @click="selectIncome('', close)"
+                    >
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 flex-shrink-0">
+                          <UIcon name="i-heroicons-link-slash" class="w-4 h-4" />
+                        </div>
+                        <div class="truncate">
+                          <p class="text-xs font-semibold text-gray-900 dark:text-white">General Balance (No link)</p>
+                          <p class="text-[11px] text-gray-400 truncate">Deduct from general wallet balance</p>
+                        </div>
+                      </div>
+                      <UIcon v-if="!formData.linkedIncomeId" name="i-heroicons-check-circle" class="w-5 h-5 text-blue-600 flex-shrink-0 ml-2" />
+                    </div>
+
+                    <!-- Income Items -->
+                    <div
+                      v-for="inc in availableIncomes"
+                      :key="inc._id"
+                      class="pt-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
+                      :class="formData.linkedIncomeId === inc._id ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''"
+                      @click="selectIncome(inc._id, close)"
+                    >
+                      <div class="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                          <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <p class="text-xs font-semibold text-gray-900 dark:text-white truncate">{{ inc.description }}</p>
+                          <div class="flex items-center justify-between text-[11px] mt-0.5">
+                            <span
+                              class="font-semibold"
+                              :class="(inc.remainingAmount ?? inc.amount) < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                            >
+                              Sisa: Rp {{ (inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount).toLocaleString('id-ID') }}
+                            </span>
+                            <span class="text-[10px] text-gray-400">
+                              Total: Rp {{ inc.amount.toLocaleString('id-ID') }}
+                            </span>
+                          </div>
+                          <!-- Micro progress bar -->
+                          <div class="w-full bg-gray-200 dark:bg-gray-700 h-1 rounded-full mt-1 overflow-hidden">
+                            <div
+                              class="h-full rounded-full transition-all duration-300"
+                              :class="(inc.percentageUsed || 0) >= 100 ? 'bg-rose-500' : 'bg-emerald-500'"
+                              :style="{ width: `${Math.min(inc.percentageUsed || 0, 100)}%` }"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <UIcon v-if="formData.linkedIncomeId === inc._id" name="i-heroicons-check-circle" class="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    </div>
+
+                    <!-- Empty state -->
+                    <div v-if="!isLoadingIncomes && availableIncomes.length === 0" class="py-6 text-center text-xs text-gray-400">
+                      {{ incomeSearch ? 'No matching incomes found' : 'No income transactions found yet' }}
+                    </div>
+
+                    <!-- Infinite Scroll / Loading indicator -->
+                    <div v-if="isLoadingIncomes || isLoadingMoreIncomes" class="py-2.5 flex justify-center items-center gap-2 text-xs text-gray-400">
+                      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-blue-500" />
+                      <span>{{ isLoadingMoreIncomes ? 'Loading more...' : 'Loading incomes...' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </UPopover>
           </UFormGroup>
 
           <UFormGroup label="💰 Amount" eager-validation name="amount" required>
