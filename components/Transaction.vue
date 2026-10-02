@@ -129,13 +129,13 @@ const action = [
               {{ linkedIncomeDescription }}
             </span>
 
-            <!-- Sisa / Remaining Balance for Income -->
+            <!-- Remaining Balance for Income -->
             <span
               v-if="isIncome && props.data.remainingAmount !== undefined"
               class="text-[10px] font-bold px-2 py-0.5 rounded-lg inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
             >
               <UIcon name="i-heroicons-banknotes" class="w-3 h-3" />
-              Sisa: Rp {{ props.data.remainingAmount.toLocaleString('id-ID') }}
+              Remaining: Rp {{ props.data.remainingAmount.toLocaleString('id-ID') }}
             </span>
           </div>
         </div>

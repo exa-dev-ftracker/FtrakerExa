@@ -473,7 +473,7 @@ watch(
                     <span v-if="selectedIncome" class="font-medium text-gray-900 dark:text-white truncate">
                       {{ selectedIncome.description }}
                       <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
-                        (Sisa: Rp {{ (selectedIncome.remainingAmount !== undefined ? selectedIncome.remainingAmount : selectedIncome.amount).toLocaleString('id-ID') }})
+                        (Remaining: Rp {{ (selectedIncome.remainingAmount !== undefined ? selectedIncome.remainingAmount : selectedIncome.amount).toLocaleString('id-ID') }})
                       </span>
                     </span>
                     <span v-else class="text-gray-400 dark:text-gray-400 font-normal">
@@ -555,7 +555,7 @@ watch(
                               class="font-semibold"
                               :class="(inc.remainingAmount ?? inc.amount) < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
                             >
-                              Sisa: Rp {{ (inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount).toLocaleString('id-ID') }}
+                              Remaining: Rp {{ (inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount).toLocaleString('id-ID') }}
                             </span>
                             <span class="text-[10px] text-gray-400">
                               Total: Rp {{ inc.amount.toLocaleString('id-ID') }}
