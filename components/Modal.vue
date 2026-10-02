@@ -99,7 +99,6 @@ const formData = reactive({
 
 const formattedAmount = ref("Rp 0");
 const availableIncomes = ref<Transaction[]>([]);
-const isLoadingIncomes = ref(false);
 
 const incomePage = ref(1);
 const hasMoreIncomes = ref(true);
