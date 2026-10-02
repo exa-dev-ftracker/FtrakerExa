@@ -196,6 +196,36 @@ const selectedIncome = computed(() => {
   return null;
 });
 
+const formatIncomeDate = (d?: string) => {
+  if (!d) return "";
+  try {
+    const dateObj = new Date(d);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(dateObj);
+  } catch {
+    return d.split("T")[0] || "";
+  }
+};
+
+const projectedRemaining = computed(() => {
+  if (!selectedIncome.value) return 0;
+  const currentRem = selectedIncome.value.remainingAmount !== undefined
+    ? selectedIncome.value.remainingAmount
+    : selectedIncome.value.amount;
+  const prevAmount = (props.isEdit && props.data && props.data.linkedIncomeId) ? (props.data.amount || 0) : 0;
+  return currentRem + prevAmount - (formData.amount || 0);
+});
+
+const projectedPercentageUsed = computed(() => {
+  if (!selectedIncome.value || !selectedIncome.value.amount) return 0;
+  const total = selectedIncome.value.amount;
+  const used = total - projectedRemaining.value;
+  return Math.min(100, Math.max(0, (used / total) * 100));
+});
+
 watch(
   () => formData.type,
   (newType) => {
@@ -488,7 +518,7 @@ watch(
               </template>
 
               <template #panel="{ close }">
-                <div class="w-[320px] sm:w-[400px] max-w-[90vw] p-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 space-y-2">
+                <div class="w-[350px] sm:w-[480px] max-w-[92vw] p-2.5 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 space-y-2">
                   <!-- Search input -->
                   <div class="mb-1">
                     <UInput
@@ -515,13 +545,13 @@ watch(
 
                   <!-- Incomes List with Scroll Pagination -->
                   <div
-                    class="max-h-60 overflow-y-auto space-y-1 divide-y divide-gray-100 dark:divide-gray-800/40 pr-1 scrollbar-thin"
+                    class="max-h-64 overflow-y-auto space-y-1.5 divide-y divide-gray-100 dark:divide-gray-800/40 pr-1 scrollbar-thin"
                     @scroll="handleIncomeScroll"
                   >
                     <!-- Option: General Balance (No Link) -->
                     <div
-                      class="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
-                      :class="!formData.linkedIncomeId ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                      class="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
+                      :class="!formData.linkedIncomeId ? 'bg-blue-50/80 dark:bg-blue-900/20' : ''"
                       @click="selectIncome('', close)"
                     >
                       <div class="flex items-center gap-2.5 min-w-0">
@@ -536,42 +566,89 @@ watch(
                       <UIcon v-if="!formData.linkedIncomeId" name="i-heroicons-check-circle" class="w-5 h-5 text-blue-600 flex-shrink-0 ml-2" />
                     </div>
 
-                    <!-- Income Items -->
+                    <!-- Income Items with Rich Details -->
                     <div
                       v-for="inc in availableIncomes"
                       :key="inc._id"
-                      class="pt-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors"
-                      :class="formData.linkedIncomeId === inc._id ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''"
+                      class="pt-2 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/90 cursor-pointer transition-all duration-150 border border-transparent"
+                      :class="formData.linkedIncomeId === inc._id ? 'bg-emerald-50/80 dark:bg-emerald-900/25 border-emerald-500/30' : ''"
                       @click="selectIncome(inc._id, close)"
                     >
-                      <div class="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 flex-shrink-0">
-                          <UIcon name="i-heroicons-banknotes" class="w-4 h-4" />
-                        </div>
+                      <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0 flex-1">
-                          <p class="text-xs font-semibold text-gray-900 dark:text-white truncate">{{ inc.description }}</p>
-                          <div class="flex items-center justify-between text-[11px] mt-0.5">
+                          <!-- Header: Description + Category + Date -->
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs font-bold text-gray-900 dark:text-white truncate">
+                              {{ inc.description }}
+                            </span>
                             <span
-                              class="font-semibold"
-                              :class="(inc.remainingAmount ?? inc.amount) < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                              v-if="inc.category && typeof inc.category === 'object' && (inc.category as any).name"
+                              class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400"
                             >
-                              Remaining: Rp {{ (inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount).toLocaleString('id-ID') }}
+                              {{ (inc.category as any).name }}
                             </span>
-                            <span class="text-[10px] text-gray-400">
-                              Total: Rp {{ inc.amount.toLocaleString('id-ID') }}
+                            <span class="text-[10px] text-gray-400 ml-auto shrink-0 font-medium">
+                              {{ formatIncomeDate(inc.date || inc.createdAt) }}
                             </span>
                           </div>
-                          <!-- Micro progress bar -->
-                          <div class="w-full bg-gray-200 dark:bg-gray-700 h-1 rounded-full mt-1 overflow-hidden">
-                            <div
-                              class="h-full rounded-full transition-all duration-300"
-                              :class="(inc.percentageUsed || 0) >= 100 ? 'bg-rose-500' : 'bg-emerald-500'"
-                              :style="{ width: `${Math.min(inc.percentageUsed || 0, 100)}%` }"
-                            />
+
+                          <!-- 3-Column Stats Grid -->
+                          <div class="grid grid-cols-3 gap-1.5 mt-2 text-[10.5px]">
+                            <div class="bg-gray-50 dark:bg-gray-800/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800/60">
+                              <span class="text-[9px] text-gray-400 uppercase block font-semibold">Remaining</span>
+                              <span
+                                class="font-bold truncate block text-[11px]"
+                                :class="(inc.remainingAmount ?? inc.amount) < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                              >
+                                Rp {{ (inc.remainingAmount !== undefined ? inc.remainingAmount : inc.amount).toLocaleString('id-ID') }}
+                              </span>
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-800/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800/60">
+                              <span class="text-[9px] text-gray-400 uppercase block font-semibold">Used</span>
+                              <span class="font-semibold text-gray-600 dark:text-gray-300 truncate block text-[11px]">
+                                Rp {{ (inc.totalUsed || 0).toLocaleString('id-ID') }}
+                              </span>
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-800/60 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800/60">
+                              <span class="text-[9px] text-gray-400 uppercase block font-semibold">Total</span>
+                              <span class="font-semibold text-gray-600 dark:text-gray-300 truncate block text-[11px]">
+                                Rp {{ inc.amount.toLocaleString('id-ID') }}
+                              </span>
+                            </div>
                           </div>
+
+                          <!-- Utilization Progress Bar & Meta Info -->
+                          <div class="mt-2 flex items-center gap-2">
+                            <div class="flex-1 bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                class="h-full rounded-full transition-all duration-300"
+                                :class="(inc.percentageUsed || 0) >= 100 ? 'bg-rose-500' : 'bg-emerald-500'"
+                                :style="{ width: `${Math.min(inc.percentageUsed || 0, 100)}%` }"
+                              />
+                            </div>
+                            <span
+                              class="text-[10px] font-bold shrink-0"
+                              :class="(inc.percentageUsed || 0) >= 100 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                            >
+                              {{ (inc.percentageUsed || 0).toFixed(0) }}% used
+                            </span>
+                            <span v-if="inc.expenseCount" class="text-[10px] text-gray-400 shrink-0 font-medium">
+                              • {{ inc.expenseCount }} linked
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- Checkmark Icon -->
+                        <div class="shrink-0 mt-0.5">
+                          <UIcon
+                            v-if="formData.linkedIncomeId === inc._id"
+                            name="i-heroicons-check-circle"
+                            class="w-5 h-5 text-emerald-600"
+                          />
                         </div>
                       </div>
-                      <UIcon v-if="formData.linkedIncomeId === inc._id" name="i-heroicons-check-circle" class="w-5 h-5 text-emerald-600 flex-shrink-0" />
                     </div>
 
                     <!-- Empty state -->
@@ -588,6 +665,89 @@ watch(
                 </div>
               </template>
             </UPopover>
+
+            <!-- Selected Funding Income Live Details Card -->
+            <div
+              v-if="selectedIncome"
+              class="mt-2.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-blue-50/40 dark:from-emerald-950/20 dark:to-blue-950/20 border border-emerald-500/25 dark:border-emerald-500/20 text-xs shadow-xs transition-all"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <UIcon name="i-heroicons-banknotes" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span class="font-bold text-gray-900 dark:text-white truncate">
+                    {{ selectedIncome.description }}
+                  </span>
+                  <span
+                    v-if="selectedIncome.date || selectedIncome.createdAt"
+                    class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0"
+                  >
+                    ({{ formatIncomeDate(selectedIncome.date || selectedIncome.createdAt) }})
+                  </span>
+                </div>
+                <UButton
+                  color="gray"
+                  variant="ghost"
+                  size="2xs"
+                  icon="i-heroicons-x-mark"
+                  label="Unlink"
+                  class="text-[10px] text-gray-500 hover:text-rose-500"
+                  @click="selectIncome('')"
+                />
+              </div>
+
+              <!-- 3-Column Summary -->
+              <div class="grid grid-cols-3 gap-2 py-1.5 border-t border-b border-emerald-500/15 dark:border-white/5 my-1.5">
+                <div>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-medium">Income Total</span>
+                  <span class="font-bold text-gray-900 dark:text-white text-xs block">
+                    Rp {{ selectedIncome.amount.toLocaleString('id-ID') }}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-medium">Already Used</span>
+                  <span class="font-bold text-gray-700 dark:text-gray-300 text-xs block">
+                    Rp {{ (selectedIncome.totalUsed || 0).toLocaleString('id-ID') }}
+                    <span v-if="selectedIncome.expenseCount" class="text-[9px] text-gray-400 block font-normal">
+                      {{ selectedIncome.expenseCount }} expense{{ selectedIncome.expenseCount > 1 ? 's' : '' }}
+                    </span>
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-medium">Current Remaining</span>
+                  <span
+                    class="font-bold text-xs block"
+                    :class="(selectedIncome.remainingAmount ?? selectedIncome.amount) < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                  >
+                    Rp {{ (selectedIncome.remainingAmount !== undefined ? selectedIncome.remainingAmount : selectedIncome.amount).toLocaleString('id-ID') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Projected Impact when expense amount > 0 -->
+              <div v-if="formData.amount > 0" class="mt-2 pt-1 flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-1">
+                  <span class="text-gray-500 dark:text-gray-400">After this deduction:</span>
+                  <span
+                    class="font-bold"
+                    :class="projectedRemaining < 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'"
+                  >
+                    Rp {{ projectedRemaining.toLocaleString('id-ID') }}
+                  </span>
+                </div>
+                <span
+                  v-if="projectedRemaining < 0"
+                  class="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded"
+                >
+                  ⚠️ Deficit Rp {{ Math.abs(projectedRemaining).toLocaleString('id-ID') }}
+                </span>
+                <span
+                  v-else
+                  class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400"
+                >
+                  {{ projectedPercentageUsed.toFixed(0) }}% will be used
+                </span>
+              </div>
+            </div>
           </UFormGroup>
 
           <UFormGroup label="💰 Amount" eager-validation name="amount" required>
