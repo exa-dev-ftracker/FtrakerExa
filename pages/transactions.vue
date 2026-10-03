@@ -145,8 +145,12 @@ const fetchTransactions = async (isAppend = false) => {
     params.append("limit", String(limit));
     params.append("sort", sortBy.value);
 
-    if (isAppend && nextCursor.value) {
-      params.append("cursor", nextCursor.value);
+    if (isAppend) {
+      if (nextCursor.value) {
+        params.append("cursor", nextCursor.value);
+      } else {
+        params.append("page", String(page.value));
+      }
     } else {
       params.append("page", "1");
     }
@@ -174,6 +178,10 @@ const fetchTransactions = async (isAppend = false) => {
       hasMore.value = newItems.length >= limit;
       nextCursor.value = null;
     }
+
+    nextTick(() => {
+      setupIntersectionObserver();
+    });
   } catch (err: any) {
     toast.add({
       title: "Error Loading Data",
@@ -314,10 +322,21 @@ const setupIntersectionObserver = () => {
   }
 };
 
-// Scroll listener for back-to-top button
+// Scroll listener for back-to-top button & infinite scroll fallback
 const handleScroll = () => {
   if (typeof window === "undefined") return;
   showBackToTop.value = window.scrollY > 400;
+
+  // Infinite scroll trigger: when user scrolls within 450px from bottom
+  const scrollHeight = document.documentElement.scrollHeight;
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const clientHeight = window.innerHeight;
+
+  if (scrollTop + clientHeight >= scrollHeight - 450) {
+    if (hasMore.value && !isLoadingInitial.value && !isLoadingMore.value) {
+      loadMoreTransactions();
+    }
+  }
 };
 
 const scrollToTop = () => {
@@ -764,7 +783,7 @@ watch(infiniteScrollSentinel, (newEl) => {
           </div>
 
           <!-- Infinite Scroll Trigger Sentinel -->
-          <div ref="infiniteScrollSentinel" class="h-4 w-full"></div>
+          <div ref="infiniteScrollSentinel" class="h-8 w-full pointer-events-none"></div>
 
           <!-- Loading More Spinner / Pill -->
           <div v-if="isLoadingMore" class="flex items-center justify-center py-6">
