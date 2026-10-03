@@ -39,7 +39,7 @@ const appliedEndDate = ref<string>("");
 const page = ref(1);
 const limit = 20;
 const hasMore = ref(true);
-const nextCursor = ref<string | null>(null);
+const isFetching = ref(false);
 const isLoadingInitial = ref(false);
 const isLoadingMore = ref(false);
 const isDeleting = ref(false);
@@ -125,14 +125,16 @@ const fetchSummary = async () => {
   }
 };
 
-// 2. Fetch Transactions Page (Cursor-Based Scroll Pagination)
-const fetchTransactions = async (isAppend = false) => {
+// 2. Fetch Transactions Page (Page-based Scroll Pagination with Deduplication)
+const fetchTransactions = async (targetPage = 1, isAppend = false) => {
   if (selectedView.value === "Custom" && (!appliedStartDate.value || !appliedEndDate.value)) {
     transactionsList.value = [];
     hasMore.value = false;
-    nextCursor.value = null;
     return;
   }
+
+  if (isFetching.value) return;
+  isFetching.value = true;
 
   if (isAppend) {
     isLoadingMore.value = true;
@@ -143,17 +145,8 @@ const fetchTransactions = async (isAppend = false) => {
   try {
     const params = buildFilterParams();
     params.append("limit", String(limit));
+    params.append("page", String(targetPage));
     params.append("sort", sortBy.value);
-
-    if (isAppend) {
-      if (nextCursor.value) {
-        params.append("cursor", nextCursor.value);
-      } else {
-        params.append("page", String(page.value));
-      }
-    } else {
-      params.append("page", "1");
-    }
 
     const res = await ($axios as any).get<TransactionResponse>(
       `/api/transaction?${params.toString()}`
@@ -163,20 +156,27 @@ const fetchTransactions = async (isAppend = false) => {
     const pagination = data?.body?.pagination;
 
     if (isAppend) {
+      // Deduplicate strictly by _id to guarantee no duplicate cards
       const existingIds = new Set(transactionsList.value.map((t) => String(t._id)));
       const uniqueNewItems = newItems.filter((t) => !existingIds.has(String(t._id)));
       transactionsList.value.push(...uniqueNewItems);
     } else {
-      transactionsList.value = newItems;
+      // Deduplicate initial batch as safety net
+      const seen = new Set<string>();
+      transactionsList.value = newItems.filter((t) => {
+        const id = String(t._id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
     }
+
+    page.value = targetPage;
 
     if (pagination) {
       hasMore.value = !!pagination.hasMore;
-      nextCursor.value = pagination.nextCursor || null;
-      if (pagination.page) page.value = pagination.page;
     } else {
       hasMore.value = newItems.length >= limit;
-      nextCursor.value = null;
     }
 
     nextTick(() => {
@@ -189,6 +189,7 @@ const fetchTransactions = async (isAppend = false) => {
       color: "red",
     });
   } finally {
+    isFetching.value = false;
     isLoadingInitial.value = false;
     isLoadingMore.value = false;
   }
@@ -196,19 +197,17 @@ const fetchTransactions = async (isAppend = false) => {
 
 // Trigger Next Page for Infinite Scroll
 const loadMoreTransactions = async () => {
-  if (isLoadingInitial.value || isLoadingMore.value || !hasMore.value) return;
-  page.value++;
-  await fetchTransactions(true);
+  if (isFetching.value || isLoadingInitial.value || isLoadingMore.value || !hasMore.value) return;
+  await fetchTransactions(page.value + 1, true);
 };
 
-// Full Refresh (resets cursor & re-fetches summary)
+// Full Refresh (resets page & re-fetches summary)
 const resetAndRefresh = async () => {
   page.value = 1;
-  nextCursor.value = null;
   hasMore.value = true;
   await Promise.all([
     fetchSummary(),
-    fetchTransactions(false),
+    fetchTransactions(1, false),
   ]);
 };
 
@@ -310,7 +309,7 @@ const setupIntersectionObserver = () => {
   observer = new IntersectionObserver(
     (entries) => {
       const target = entries[0];
-      if (target.isIntersecting && hasMore.value && !isLoadingInitial.value && !isLoadingMore.value) {
+      if (target.isIntersecting && hasMore.value && !isFetching.value && !isLoadingInitial.value && !isLoadingMore.value) {
         loadMoreTransactions();
       }
     },
@@ -333,7 +332,7 @@ const handleScroll = () => {
   const clientHeight = window.innerHeight;
 
   if (scrollTop + clientHeight >= scrollHeight - 450) {
-    if (hasMore.value && !isLoadingInitial.value && !isLoadingMore.value) {
+    if (hasMore.value && !isFetching.value && !isLoadingInitial.value && !isLoadingMore.value) {
       loadMoreTransactions();
     }
   }
