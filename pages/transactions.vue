@@ -31,24 +31,22 @@ const searchQuery = ref<string>("");
 
 // View Display Mode: 'list' | 'calendar'
 const viewMode = ref<"list" | "calendar">("list");
+const calendarRef = ref();
 
 const toggleViewMode = (mode: "list" | "calendar") => {
   viewMode.value = mode;
-  if (mode === "calendar") {
-    if (selectedView.value !== "Month" && selectedView.value !== "Custom") {
-      selectedView.value = "Month";
-    }
-  }
 };
 
-const handleCalendarMonthChange = async (year: number, month: number) => {
-  const start = `${year}-${String(month).padStart(2, "0")}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const end = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  appliedStartDate.value = start;
-  appliedEndDate.value = end;
-  selectedView.value = "Custom";
-  await resetAndRefresh();
+const handleCalendarDelete = (id: string) => {
+  transactionsList.value = transactionsList.value.filter((t) => t._id !== id);
+  fetchSummary();
+};
+
+const handleCalendarEdit = (date: string, id: string) => {
+  const t = transactionsList.value.find((item) => item._id === id);
+  if (t) {
+    store.editTransaction(t);
+  }
 };
 
 // Custom Date Range States
@@ -400,7 +398,12 @@ watch(searchQuery, () => {
 // Watch global store refresh trigger (after adding or updating transaction)
 watch(
   () => store.refreshTrigger,
-  () => resetAndRefresh()
+  () => {
+    resetAndRefresh();
+    if (viewMode.value === "calendar") {
+      calendarRef.value?.refresh();
+    }
+  }
 );
 
 onMounted(() => {
@@ -621,10 +624,11 @@ watch(infiniteScrollSentinel, (newEl) => {
       <!-- Calendar View Mode -->
       <TransactionCalendar
         v-if="viewMode === 'calendar'"
-        :transactions="transactionsList"
-        @delete="handleDeleteTransaction"
-        @edit="handleEdit"
-        @month-change="handleCalendarMonthChange"
+        ref="calendarRef"
+        :category="filterCategory"
+        :type="filterType"
+        @delete="handleCalendarDelete"
+        @edit="handleCalendarEdit"
       />
 
       <!-- List View Mode (Deck & Grouped Feed) -->

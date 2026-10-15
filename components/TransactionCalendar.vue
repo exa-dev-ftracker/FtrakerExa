@@ -2,12 +2,17 @@
 import type { Transaction } from "~/types";
 
 interface Props {
-  transactions: Transaction[];
+  transactions?: Transaction[];
   initialDate?: string;
+  category?: string;
+  type?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  transactions: () => [],
   initialDate: "",
+  category: "all",
+  type: "All",
 });
 
 const emit = defineEmits<{
@@ -17,7 +22,13 @@ const emit = defineEmits<{
   (e: "month-change", year: number, month: number): void;
 }>();
 
+const { $axios } = useNuxtApp();
+const toast = useToast();
 const store = useDefaultStore();
+
+const internalTransactions = ref<Transaction[]>([]);
+const isCalendarLoading = ref(false);
+const hasFetchedInternal = ref(false);
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -46,10 +57,20 @@ const focusedMonthTitle = computed(() => {
   return `${monthNames[focusedMonth.value]} ${focusedYear.value}`;
 });
 
+// Active transactions data source (prefers custom API result, fallback to props)
+const activeTransactions = computed<Transaction[]>(() => {
+  if (hasFetchedInternal.value) {
+    return internalTransactions.value;
+  }
+  return props.transactions && props.transactions.length > 0
+    ? props.transactions
+    : internalTransactions.value;
+});
+
 // Group transactions by date string
 const transactionsByDate = computed(() => {
   const map: Record<string, Transaction[]> = {};
-  for (const t of props.transactions) {
+  for (const t of activeTransactions.value) {
     const rawDate = (t as any).date || t.createdAt;
     if (!rawDate) continue;
     const match = String(rawDate).match(/^(\d{4}-\d{2}-\d{2})/);
@@ -60,6 +81,66 @@ const transactionsByDate = computed(() => {
     map[dateKey].push(t);
   }
   return map;
+});
+
+// Fetch all transactions in current calendar view range from custom API (/api/transaction/calendar)
+const fetchMonthTransactions = async () => {
+  isCalendarLoading.value = true;
+  try {
+    const year = focusedYear.value;
+    const month = focusedMonth.value;
+
+    const firstDay = new Date(year, month, 1);
+    const startDayOffset = firstDay.getDay();
+    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const totalCells = Math.ceil((startDayOffset + daysInCurrentMonth) / 7) * 7;
+
+    let fromDate: Date;
+    if (startDayOffset > 0) {
+      fromDate = new Date(year, month - 1, daysInPrevMonth - startDayOffset + 1);
+    } else {
+      fromDate = new Date(year, month, 1);
+    }
+
+    const remainingAfter = totalCells - (startDayOffset + daysInCurrentMonth);
+    let toDate: Date;
+    if (remainingAfter > 0) {
+      toDate = new Date(year, month + 1, remainingAfter);
+    } else {
+      toDate = new Date(year, month, daysInCurrentMonth);
+    }
+
+    const from = formatDateKey(fromDate);
+    const to = formatDateKey(toDate);
+
+    const params = new URLSearchParams();
+    params.append("from", from);
+    params.append("to", to);
+    if (props.category && props.category !== "all") {
+      params.append("category", props.category);
+    }
+    if (props.type && props.type !== "All") {
+      params.append("type", props.type);
+    }
+
+    const res = await ($axios as any).get(`/api/transaction/calendar?${params.toString()}`);
+    const data = res.data?.body || res?.body || res.data;
+    internalTransactions.value = data?.items || [];
+    hasFetchedInternal.value = true;
+  } catch (err: any) {
+    console.error("Failed to fetch calendar transactions:", err);
+  } finally {
+    isCalendarLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchMonthTransactions();
+});
+
+watch([focusedYear, focusedMonth, () => props.category, () => props.type], () => {
+  fetchMonthTransactions();
 });
 
 // Calculate Monthly Summary for currently focused month
@@ -239,6 +320,29 @@ const goToToday = () => {
   emit("select-date", todayStr);
   emit("month-change", focusedYear.value, focusedMonth.value + 1);
 };
+
+const handleDeleteTransaction = async (id: string) => {
+  try {
+    await ($axios as any).delete("/api/transaction", { data: { id } });
+    internalTransactions.value = internalTransactions.value.filter((t) => t._id !== id);
+    toast.add({ title: "Deleted", description: "Transaction removed successfully", color: "green" });
+    emit("delete", id);
+  } catch (err: any) {
+    toast.add({ title: "Error", description: "Failed to delete transaction", color: "red" });
+  }
+};
+
+const handleEditTransaction = (date: string, id: string) => {
+  const item = activeTransactions.value.find((t) => t._id === id);
+  if (item) {
+    store.editTransaction(item);
+  }
+  emit("edit", date, id);
+};
+
+defineExpose({
+  refresh: fetchMonthTransactions,
+});
 </script>
 
 <template>
@@ -253,8 +357,13 @@ const goToToday = () => {
           <div class="w-9 h-9 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
             <UIcon name="i-heroicons-calendar-days" class="w-5 h-5" />
           </div>
-          <h2 class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            {{ focusedMonthTitle }}
+          <h2 class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <span>{{ focusedMonthTitle }}</span>
+            <UIcon
+              v-if="isCalendarLoading"
+              name="i-heroicons-arrow-path"
+              class="w-4 h-4 text-blue-500 animate-spin"
+            />
           </h2>
         </div>
 
@@ -455,8 +564,8 @@ const goToToday = () => {
             v-for="t in selectedDayTransactions"
             :key="t._id"
             :data="t"
-            @delete="(id) => emit('delete', id)"
-            @edit="(date, id) => emit('edit', date, id)"
+            @delete="(id) => handleDeleteTransaction(id)"
+            @edit="(date, id) => handleEditTransaction(date, id)"
           />
         </div>
 
