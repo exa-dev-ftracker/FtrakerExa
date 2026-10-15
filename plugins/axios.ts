@@ -65,6 +65,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
 
+    (config as any).metadata = { startTime: Date.now() };
     return config;
   });
 
@@ -76,9 +77,25 @@ export default defineNuxtPlugin((nuxtApp) => {
     (response) => response,
     async (error: AxiosError) => {
       const originalRequest: any = error.config;
+      const startTime = originalRequest?.metadata?.startTime;
+      const durationMs = startTime ? Date.now() - startTime : undefined;
+
+      const logHttpError = () => {
+        if (import.meta.client) {
+          crashReporter.recordHttpError({
+            method: (originalRequest?.method || "GET").toUpperCase(),
+            path: originalRequest?.url || "",
+            statusCode: error.response?.status,
+            errorMessage: error.message,
+            responseBody: error.response?.data,
+            durationMs,
+          });
+        }
+      };
 
       // 1. Skip if not 401 or already retried
       if (error.response?.status !== 401 || originalRequest?._retry) {
+        logHttpError();
         return Promise.reject(error);
       }
 
@@ -93,6 +110,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         requestUrl.includes("/users");
 
       if (isAuthEndpoint) {
+        logHttpError();
         return Promise.reject(error);
       }
 
@@ -134,6 +152,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         // 🔁 retry request asli
         return api(originalRequest);
       } catch (err) {
+        logHttpError();
         if (import.meta.client) {
           const currentPath = window.location.pathname;
           if (

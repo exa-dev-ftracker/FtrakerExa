@@ -72,6 +72,9 @@ export default defineNuxtConfig({
       clientId: process.env.NUXT_APPLE_CLIENT_ID || "",
     },
     public: {
+      lokiUrl:
+        process.env.NUXT_PUBLIC_LOKI_URL ||
+        "https://loki.eka-dev.cloud/loki/api/v1/push",
       google: {
         clientId: process.env.NUXT_GOOGLE_CLIENT_ID,
       },
