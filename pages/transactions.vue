@@ -262,11 +262,7 @@ const formatDateHeading = (dateKey: string) => {
 const transactionsByDate = computed(() => {
   const groups: Record<string, Transaction[]> = {};
   for (const t of transactionsList.value) {
-    const dateVal = (t as any).date || t.createdAt;
-    const rawDate =
-      dateVal && String(dateVal).includes("2026-09-28T23:32:05") && t.createdAt
-        ? t.createdAt
-        : dateVal;
+    const rawDate = (t as any).date || t.createdAt;
     const dateKey = getDateKey(rawDate);
     if (!groups[dateKey]) {
       groups[dateKey] = [];

@@ -114,18 +114,10 @@ export default defineEventHandler(async (events) => {
       .populate("linkedIncomeId", "description amount date type")
       .lean();
 
-    const items = rawDocs.map((t: any) => {
-      const obj = { ...t };
-      if (
-        obj.date &&
-        obj.createdAt &&
-        String(obj.date).includes("2026-09-28T23:32:05") &&
-        !String(obj.createdAt).includes("2026-09-28T23:32:05")
-      ) {
-        obj.date = obj.createdAt;
-      }
-      return obj;
-    });
+    const items = rawDocs.map((t: any) => ({
+      ...t,
+      date: t.date || t.createdAt,
+    }));
 
     let totalIncome = 0;
     let totalExpense = 0;

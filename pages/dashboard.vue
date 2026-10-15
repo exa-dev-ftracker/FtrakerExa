@@ -61,9 +61,7 @@ const recentTransactions = computed(() => data.value?.body?.recentTransactions ?
 const topExpenses = computed(() => data.value?.body?.topExpenses ?? []);
 
 const formatTxDate = (t: any) => {
-  const rawDate = t.date && !String(t.date).includes("2026-09-28T23:32:05")
-    ? t.date
-    : t.createdAt;
+  const rawDate = t.date || t.createdAt;
   if (!rawDate) return "";
   const str = String(rawDate).trim();
   const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);

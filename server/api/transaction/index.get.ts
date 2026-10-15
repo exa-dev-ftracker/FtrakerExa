@@ -143,7 +143,7 @@ export default defineEventHandler(async (events) => {
 
             const current = rawDocs.map((t) => {
                 const obj = t.toObject ? t.toObject() : { ...t };
-                if (obj.date && obj.createdAt && String(obj.date).includes("2026-09-28T23:32:05") && !String(obj.createdAt).includes("2026-09-28T23:32:05")) {
+                if (!obj.date && obj.createdAt) {
                     obj.date = obj.createdAt;
                 }
                 return obj;
