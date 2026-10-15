@@ -199,9 +199,11 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
       hasMore.value = newItems.length >= limit;
     }
 
-    nextTick(() => {
-      setupIntersectionObserver();
-    });
+    if (viewMode.value === "list") {
+      nextTick(() => {
+        setupIntersectionObserver();
+      });
+    }
   } catch (err: any) {
     toast.add({
       title: "Error Loading Data",
@@ -215,8 +217,9 @@ const fetchTransactions = async (targetPage = 1, isAppend = false) => {
   }
 };
 
-// Trigger Next Page for Infinite Scroll
+// Trigger Next Page for Infinite Scroll (List Mode Only)
 const loadMoreTransactions = async () => {
+  if (viewMode.value !== "list") return;
   if (isFetching.value || isLoadingInitial.value || isLoadingMore.value || !hasMore.value) return;
   await fetchTransactions(page.value + 1, true);
 };
@@ -319,17 +322,33 @@ const handleEdit = (date: string, _id: string) => {
   store.editTransaction(t);
 };
 
-// Intersection Observer for Infinite Scroll
+// Intersection Observer for Infinite Scroll (List Mode Only)
 let observer: IntersectionObserver | null = null;
 const setupIntersectionObserver = () => {
   if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+
+  // Never observe when in calendar mode
+  if (viewMode.value !== "list") {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    return;
+  }
 
   if (observer) observer.disconnect();
 
   observer = new IntersectionObserver(
     (entries) => {
       const target = entries[0];
-      if (target.isIntersecting && hasMore.value && !isFetching.value && !isLoadingInitial.value && !isLoadingMore.value) {
+      if (
+        target?.isIntersecting &&
+        viewMode.value === "list" &&
+        hasMore.value &&
+        !isFetching.value &&
+        !isLoadingInitial.value &&
+        !isLoadingMore.value
+      ) {
         loadMoreTransactions();
       }
     },
@@ -345,6 +364,9 @@ const setupIntersectionObserver = () => {
 const handleScroll = () => {
   if (typeof window === "undefined") return;
   showBackToTop.value = window.scrollY > 400;
+
+  // Never trigger infinite scroll pagination when in calendar mode
+  if (viewMode.value !== "list") return;
 
   // Infinite scroll trigger: when user scrolls within 450px from bottom
   const scrollHeight = document.documentElement.scrollHeight;
@@ -369,6 +391,12 @@ watch(viewMode, (newVal) => {
     nextTick(() => {
       setupIntersectionObserver();
     });
+  } else {
+    // When switching to calendar, immediately disconnect and destroy observer
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
   }
 });
 
@@ -412,18 +440,30 @@ onMounted(() => {
     store.fetchCategories();
   }
   resetAndRefresh();
-  nextTick(() => {
-    setupIntersectionObserver();
-  });
+  if (viewMode.value === "list") {
+    nextTick(() => {
+      setupIntersectionObserver();
+    });
+  }
   window.addEventListener("scroll", handleScroll, { passive: true });
 });
 
 onUnmounted(() => {
-  if (observer) observer.disconnect();
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
   window.removeEventListener("scroll", handleScroll);
 });
 
 watch(infiniteScrollSentinel, (newEl) => {
+  if (viewMode.value !== "list") {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    return;
+  }
   if (newEl && observer) {
     observer.disconnect();
     observer.observe(newEl);
