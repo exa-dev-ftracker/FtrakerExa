@@ -29,6 +29,28 @@ const filterType = ref<"All" | "Income" | "Expense">("All");
 const sortBy = ref<"newest" | "oldest" | "highest" | "lowest">("newest");
 const searchQuery = ref<string>("");
 
+// View Display Mode: 'list' | 'calendar'
+const viewMode = ref<"list" | "calendar">("list");
+
+const toggleViewMode = (mode: "list" | "calendar") => {
+  viewMode.value = mode;
+  if (mode === "calendar") {
+    if (selectedView.value !== "Month" && selectedView.value !== "Custom") {
+      selectedView.value = "Month";
+    }
+  }
+};
+
+const handleCalendarMonthChange = async (year: number, month: number) => {
+  const start = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  appliedStartDate.value = start;
+  appliedEndDate.value = end;
+  selectedView.value = "Custom";
+  await resetAndRefresh();
+};
+
 // Custom Date Range States
 type DateRange = [Date, Date] | null;
 const dateRange = ref<DateRange>(null);
@@ -344,6 +366,14 @@ const scrollToTop = () => {
 };
 
 // Watchers for filter adjustments
+watch(viewMode, (newVal) => {
+  if (newVal === "list") {
+    nextTick(() => {
+      setupIntersectionObserver();
+    });
+  }
+});
+
 watch(selectedView, (newVal) => {
   if (newVal !== "Custom") {
     resetAndRefresh();
@@ -427,7 +457,39 @@ watch(infiniteScrollSentinel, (newEl) => {
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- View Mode Toggle: List vs Calendar -->
+          <div class="inline-flex items-center bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5">
+            <button
+              type="button"
+              @click="toggleViewMode('list')"
+              :class="[
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer',
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-xs'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+              ]"
+              title="List View"
+            >
+              <UIcon name="i-heroicons-bars-3-bottom-left" class="w-4 h-4" />
+              <span class="hidden md:inline">List</span>
+            </button>
+            <button
+              type="button"
+              @click="toggleViewMode('calendar')"
+              :class="[
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer',
+                viewMode === 'calendar'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+              ]"
+              title="Calendar View"
+            >
+              <UIcon name="i-heroicons-calendar-days" class="w-4 h-4" />
+              <span class="hidden md:inline">Calendar</span>
+            </button>
+          </div>
+
           <UButton
             @click="resetAndRefresh"
             color="gray"
@@ -556,6 +618,17 @@ watch(infiniteScrollSentinel, (newEl) => {
         </Motion>
       </section>
 
+      <!-- Calendar View Mode -->
+      <TransactionCalendar
+        v-if="viewMode === 'calendar'"
+        :transactions="transactionsList"
+        @delete="handleDeleteTransaction"
+        @edit="handleEdit"
+        @month-change="handleCalendarMonthChange"
+      />
+
+      <!-- List View Mode (Deck & Grouped Feed) -->
+      <template v-else>
       <!-- Advanced Control Deck (Filters, Period, Type, Category, Sort, Search) -->
       <Motion
         :initial="{ opacity: 0, y: 20 }"
@@ -818,6 +891,7 @@ watch(infiniteScrollSentinel, (newEl) => {
           </div>
         </div>
       </section>
+      </template>
 
       <!-- Floating Scroll-to-Top Button -->
       <Transition
