@@ -2,7 +2,7 @@
 const store = useDefaultStore();
 const route = useRoute();
 const router = useRouter();
-const isLoading = ref(true);
+const isLoading = ref(false);
 
 const jwt = useCookie("jwt");
 if (jwt.value) {
@@ -16,7 +16,8 @@ onMounted(async () => {
     document.referrer.includes("android-app://");
 
   if (isStandalone && route.path === "/") {
-    // coba pulihkan sesi (refresh dulu jika access token habis) sebelum redirect
+    isLoading.value = true;
+    // pulihkan sesi sebelum redirect jika dalam mode PWA standalone
     const { restoreSession } = useAuthSession();
     const restored = await restoreSession();
     if (restored) {
@@ -24,9 +25,8 @@ onMounted(async () => {
     } else {
       await router.push("/login");
     }
+    isLoading.value = false;
   }
-
-  isLoading.value = false;
 });
 
 useSeoMeta({
@@ -86,8 +86,10 @@ useHead({
 </script>
 
 <template>
-  <LoadingScreen v-if="isLoading" />
-  <NuxtLayout v-else>
-    <NuxtPage />
-  </NuxtLayout>
+  <div>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+    <LoadingScreen v-if="isLoading" />
+  </div>
 </template>
